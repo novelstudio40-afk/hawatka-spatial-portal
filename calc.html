@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>حاسبة مساحة الشكل الرباعي والآلة الحاسبة | الفدان والقيراط والسهم</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-page: #060b16;
+      --bg-card: #0f172a;
+      --bg-box: #090d16;
+      --border: rgba(148, 163, 184, 0.22);
+      --blue: #3b82f6;
+      --gold: #facc15;
+      --emerald: #10b981;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #1e293b 0%, var(--bg-page) 70%);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      direction: rtl;
+    }
+
+    /* Two Calculators Wrapper: Right = Quad Calc, Left = Standard Calc, Mobile = Stacked */
+    .calculators-layout {
+      display: grid;
+      grid-template-columns: 1.65fr 1fr;
+      gap: 18px;
+      width: 1140px;
+      max-width: 100%;
+      align-items: stretch;
+    }
+
+    @media (max-width: 960px) {
+      .calculators-layout {
+        grid-template-columns: 1fr;
+      }
+      body {
+        padding: 12px;
+        align-items: flex-start;
+      }
+    }
+
+    .calc-card {
+      background: var(--bg-card);
+      border: 1.5px solid rgba(59, 130, 246, 0.45);
+      border-radius: 18px;
+      padding: 20px 22px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .calc-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+      gap: 10px;
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-box {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--bg-box);
+      border: 1px solid #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
+    }
+
+    .brand-title h1, .brand-title h2 {
+      font-size: 16.5px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.3;
+    }
+
+    .brand-title p {
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .ctrl-group {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .ctrl-group label {
+      font-size: 11.5px;
+      color: #cbd5e1;
+      font-weight: 700;
+    }
+
+    .preset-btn {
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #475569;
+      border-radius: 7px;
+      padding: 4px 8px;
+      font-size: 11.5px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .preset-btn:hover, .preset-btn.active {
+      background: var(--blue);
+      color: #fff;
+      border-color: #60a5fa;
+    }
+
+    .ctrl-input {
+      width: 72px;
+      background: var(--bg-box);
+      color: var(--gold);
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 4px 7px;
+      font-size: 12.5px;
+      font-weight: 800;
+      text-align: center;
+      outline: none;
+    }
+
+    .ctrl-select {
+      background: var(--bg-box);
+      color: #fff;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 4px 7px;
+      font-size: 11.5px;
+      font-weight: 700;
+      outline: none;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 7fr 5fr;
+      gap: 14px;
+      align-items: center;
+    }
+
+    @media (max-width: 640px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+      .calc-card {
+        padding: 15px;
+      }
+    }
+
+    .inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+
+    .field-box label {
+      display: block;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #cbd5e1;
+      margin-bottom: 4px;
+    }
+
+    .field-box input {
+      width: 100%;
+      background: var(--bg-box);
+      border: 1px solid #334155;
+      border-radius: 9px;
+      padding: 7px 11px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .field-box input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    .error-box {
+      display: none;
+      background: rgba(239, 68, 68, 0.14);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+      border-radius: 9px;
+      padding: 7px 11px;
+      font-size: 11.5px;
+      font-weight: 700;
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+
+    .stat-box {
+      background: var(--bg-box);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 9px 10px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .stat-value {
+      font-size: 16.5px;
+      font-weight: 800;
+      color: #38bdf8;
+      margin-top: 2px;
+    }
+
+    .stat-sub {
+      font-size: 11px;
+      color: #fde047;
+      margin-top: 2px;
+    }
+
+    .send-to-std-btn {
+      margin-top: 5px;
+      background: rgba(16, 185, 129, 0.16);
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      color: #6ee7b7;
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 10.5px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .send-to-std-btn:hover {
+      background: var(--emerald);
+      color: #042f2e;
+    }
+
+    .fks-container {
+      background: var(--bg-box);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 10px 12px;
+    }
+
+    .fks-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 7px;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .fks-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      text-align: center;
+    }
+
+    .fks-card {
+      background: #1e293b;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 7px 6px;
+    }
+
+    .fks-num {
+      font-size: 17px;
+      font-weight: 900;
+      color: var(--gold);
+    }
+
+    .fks-unit {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .canvas-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-box);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px;
+    }
+
+    /* ================= LEFT CARD: STANDARD CALCULATOR ================= */
+    .std-screen {
+      background: var(--bg-box);
+      border: 1.5px solid #334155;
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      text-align: left;
+      direction: ltr;
+      min-height: 78px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: inset 0 3px 8px rgba(0,0,0,0.65);
+    }
+
+    .std-expr {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      min-height: 18px;
+      word-break: break-all;
+      font-family: monospace;
+    }
+
+    .std-val {
+      font-size: 26px;
+      font-weight: 900;
+      color: #38bdf8;
+      word-break: break-all;
+      line-height: 1.15;
+    }
+
+    .std-fks-bar {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.32);
+      border-radius: 9px;
+      padding: 6px 10px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11.5px;
+    }
+
+    .std-keypad {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      direction: ltr;
+    }
+
+    .std-key {
+      background: #1e293b;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 10px;
+      color: #f8fafc;
+      font-size: 17px;
+      font-weight: 800;
+      padding: 10px 0;
+      cursor: pointer;
+      transition: all 0.12s;
+      user-select: none;
+    }
+
+    .std-key:hover {
+      background: #334155;
+      border-color: #60a5fa;
+      transform: translateY(-1px);
+    }
+
+    .std-key:active {
+      transform: translateY(0);
+    }
+
+    .std-key.op {
+      background: rgba(59, 130, 246, 0.2);
+      color: #93c5fd;
+      border-color: rgba(59, 130, 246, 0.4);
+    }
+
+    .std-key.op:hover {
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .std-key.clr {
+      background: rgba(239, 68, 68, 0.18);
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.35);
+    }
+
+    .std-key.clr:hover {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .std-key.eq {
+      background: linear-gradient(135deg, var(--emerald), #059669);
+      color: #042f2e;
+      border: none;
+      grid-column: span 2;
+    }
+
+    .std-key.eq:hover {
+      filter: brightness(1.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="calculators-layout">
+
+    <!-- ================= RIGHT: QUADRILATERAL AREA CALCULATOR ================= -->
+    <div class="calc-card">
+      <div class="calc-header">
+        <div class="brand-wrap">
+          <div class="logo-box">
+            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <polygon points="24,18 82,25 85,82 15,82" fill="rgba(59, 130, 246, 0.22)" stroke="#3b82f6" stroke-width="5" stroke-linejoin="round"/>
+              <circle cx="24" cy="18" r="6.5" fill="#3b82f6"/>
+              <circle cx="82" cy="25" r="6.5" fill="#3b82f6"/>
+              <circle cx="85" cy="82" r="6.5" fill="#3b82f6"/>
+              <circle cx="15" cy="82" r="6.5" fill="#3b82f6"/>
+            </svg>
+          </div>
+          <div class="brand-title">
+            <h1>حاسبة مساحة الشكل الرباعي</h1>
+            <p>حساب المساحة بالمتر المربع وبالفدان والقيراط والسهم</p>
+          </div>
+        </div>
+
+        <div class="header-controls">
+          <div class="ctrl-group">
+            <label>مساحة القيراط (م²):</label>
+            <button type="button" class="preset-btn" onclick="setKirat(175)">175</button>
+            <button type="button" class="preset-btn" onclick="setKirat(171.35)">171.35</button>
+            <input type="number" id="kiratSize" class="ctrl-input" value="175" min="1" step="any" oninput="calculate()" />
+          </div>
+          <div class="ctrl-group">
+            <label>الوحدة:</label>
+            <select id="unitSelect" class="ctrl-select" onchange="calculate()">
+              <option value="م">متر (م)</option>
+              <option value="سم">سنتيمتر (سم)</option>
+              <option value="مم">مليمتر (مم)</option>
+              <option value="قدم">قدم</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="main-grid">
+        <!-- Inputs & Results Column -->
+        <div style="display:flex;flex-direction:column;gap:11px;">
+          <div class="inputs-grid">
+            <div class="field-box">
+              <label>الضلع الأول (أ - العلوي)</label>
+              <input type="number" id="sideA" value="10" min="0" step="any" oninput="calculate()" />
+            </div>
+            <div class="field-box">
+              <label>الضلع الثاني (ب - الأيمن)</label>
+              <input type="number" id="sideB" value="8" min="0" step="any" oninput="calculate()" />
+            </div>
+            <div class="field-box">
+              <label>الضلع الثالث (ج - السفلي)</label>
+              <input type="number" id="sideC" value="12" min="0" step="any" oninput="calculate()" />
+            </div>
+            <div class="field-box">
+              <label>الضلع الرابع (د - الأيسر)</label>
+              <input type="number" id="sideD" value="9" min="0" step="any" oninput="calculate()" />
+            </div>
+          </div>
+
+          <div id="errorBox" class="error-box"></div>
+
+          <!-- Area & Perimeter -->
+          <div class="stats-row">
+            <div class="stat-box">
+              <div class="stat-label">المساحة الكلية</div>
+              <div id="avgArea" class="stat-value">--</div>
+              <div id="formulaNote" class="stat-sub">--</div>
+              <button type="button" class="send-to-std-btn" onclick="addQuadAreaToStdCalc()" title="إضافة هذه المساحة إلى الآلة الحاسبة على اليسار">
+                ➕ أضف للآلة الحاسبة
+              </button>
+            </div>
+            <div class="stat-box" style="display:flex;flex-direction:column;justify-content:center;">
+              <div class="stat-label">المحيط الكلي</div>
+              <div id="perimeterVal" class="stat-value" style="color:#fff;">--</div>
+              <div class="stat-sub" style="color:var(--text-muted);">مجموع الأضلاع</div>
+            </div>
+          </div>
+
+          <!-- Feddan, Kirat, Sahm -->
+          <div class="fks-container">
+            <div class="fks-top">
+              <span style="font-size:11.5px;font-weight:700;color:#cbd5e1;">المساحة بالفدان والقيراط والسهم:</span>
+              <span id="totalKiratsNote" style="font-size:11px;color:#6ee7b7;font-weight:700;">--</span>
+            </div>
+            <div class="fks-grid">
+              <div class="fks-card">
+                <div id="feddanVal" class="fks-num">0</div>
+                <div class="fks-unit">فدان</div>
+              </div>
+              <div class="fks-card">
+                <div id="kiratVal" class="fks-num">0</div>
+                <div class="fks-unit">قيراط</div>
+              </div>
+              <div class="fks-card">
+                <div id="sahmVal" class="fks-num">0.00</div>
+                <div class="fks-unit">سهم</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visual Canvas Column -->
+        <div class="canvas-box">
+          <canvas id="quadCanvas" width="250" height="225" style="max-width:100%;"></canvas>
+          <div style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:6px;">معاينة تخطيطية للشكل الرباعي</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= LEFT: STANDARD CALCULATOR ================= -->
+    <div class="calc-card" style="border-color:rgba(16, 185, 129, 0.45);">
+      <div>
+        <div class="calc-header" style="margin-bottom:12px;">
+          <div class="brand-wrap">
+            <div class="logo-box" style="color:#34d399;font-size:22px;">🧮</div>
+            <div class="brand-title">
+              <h2>آلة حاسبة عادية</h2>
+              <p>لجمع مساحات القطع والعمليات الحسابية السريعة</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Digital Screen -->
+        <div class="std-screen">
+          <div class="std-expr" id="stdExpr"></div>
+          <div class="std-val" id="stdDisplay">0</div>
+        </div>
+
+        <!-- Instant Conversion of Standard Calculator Value to Feddan / Kirat / Sahm -->
+        <div class="std-fks-bar">
+          <span style="color:#cbd5e1;font-weight:700;">تحويل الناتج (كمتر مربع):</span>
+          <strong id="stdFksResult" style="color:#facc15;font-weight:800;">0 ف ، 0 ط ، 0.00 س</strong>
+        </div>
+      </div>
+
+      <!-- Keypad -->
+      <div class="std-keypad">
+        <button type="button" class="std-key clr" onclick="stdClear()">C</button>
+        <button type="button" class="std-key clr" onclick="stdBackspace()">⌫</button>
+        <button type="button" class="std-key op" onclick="stdAppend('%')">%</button>
+        <button type="button" class="std-key op" onclick="stdAppend('/')">÷</button>
+
+        <button type="button" class="std-key" onclick="stdAppend('7')">7</button>
+        <button type="button" class="std-key" onclick="stdAppend('8')">8</button>
+        <button type="button" class="std-key" onclick="stdAppend('9')">9</button>
+        <button type="button" class="std-key op" onclick="stdAppend('*')">×</button>
+
+        <button type="button" class="std-key" onclick="stdAppend('4')">4</button>
+        <button type="button" class="std-key" onclick="stdAppend('5')">5</button>
+        <button type="button" class="std-key" onclick="stdAppend('6')">6</button>
+        <button type="button" class="std-key op" onclick="stdAppend('-')">−</button>
+
+        <button type="button" class="std-key" onclick="stdAppend('1')">1</button>
+        <button type="button" class="std-key" onclick="stdAppend('2')">2</button>
+        <button type="button" class="std-key" onclick="stdAppend('3')">3</button>
+        <button type="button" class="std-key op" onclick="stdAppend('+')">+</button>
+
+        <button type="button" class="std-key" onclick="stdAppend('0')">0</button>
+        <button type="button" class="std-key" onclick="stdAppend('.')">.</button>
+        <button type="button" class="std-key eq" onclick="stdEvaluate()">=</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let lastQuadAreaM2 = 0;
+
+    function fmt(n) {
+      return Number(n.toFixed(2)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function setKirat(val) {
+      document.getElementById('kiratSize').value = val;
+      calculate();
+      updateStdFksBar();
+    }
+
+    function toSquareMeters(area, unit) {
+      if (unit === 'سم') return area / 10000;
+      if (unit === 'مم') return area / 1000000;
+      if (unit === 'قدم') return area * 0.09290304;
+      return area;
+    }
+
+    function computeFksFromSqm(areaM2) {
+      const kiratAreaInput = parseFloat(document.getElementById('kiratSize').value);
+      const kiratSize = (kiratAreaInput && kiratAreaInput > 0) ? kiratAreaInput : 175;
+      const totalKirats = Math.max(0, areaM2) / kiratSize;
+      let feddans = Math.floor(totalKirats / 24 + 1e-9);
+      let remKirats = Math.max(0, totalKirats - feddans * 24);
+      let kirats = Math.floor(remKirats + 1e-9);
+      let sahms = Math.max(0, (remKirats - kirats) * 24);
+
+      if (sahms >= 23.995) {
+        sahms = 0;
+        kirats += 1;
+      }
+      if (kirats >= 24) {
+        kirats -= 24;
+        feddans += 1;
+      }
+      return { feddans, kirats, sahms, totalKirats, kiratSize };
+    }
+
+    function calculate() {
+      const a = parseFloat(document.getElementById('sideA').value);
+      const b = parseFloat(document.getElementById('sideB').value);
+      const c = parseFloat(document.getElementById('sideC').value);
+      const d = parseFloat(document.getElementById('sideD').value);
+      const unit = document.getElementById('unitSelect').value;
+      const unitSq = unit + '²';
+
+      const errorBox = document.getElementById('errorBox');
+      const avgEl = document.getElementById('avgArea');
+      const perimEl = document.getElementById('perimeterVal');
+      const formulaNote = document.getElementById('formulaNote');
+      const feddanEl = document.getElementById('feddanVal');
+      const kiratEl = document.getElementById('kiratVal');
+      const sahmEl = document.getElementById('sahmVal');
+      const totalKiratsNote = document.getElementById('totalKiratsNote');
+
+      errorBox.style.display = 'none';
+
+      if (!a || !b || !c || !d || a <= 0 || b <= 0 || c <= 0 || d <= 0) {
+        errorBox.textContent = 'يرجى إدخال أطوال موجبة لجميع الأضلاع الأربعة.';
+        errorBox.style.display = 'block';
+        avgEl.textContent = '--';
+        perimEl.textContent = '--';
+        formulaNote.textContent = '--';
+        feddanEl.textContent = '--';
+        kiratEl.textContent = '--';
+        sahmEl.textContent = '--';
+        totalKiratsNote.textContent = '--';
+        lastQuadAreaM2 = 0;
+        return;
+      }
+
+      const perimeter = a + b + c + d;
+      const avg1 = (a + c) / 2;
+      const avg2 = (b + d) / 2;
+      const avgArea = avg1 * avg2;
+
+      avgEl.textContent = fmt(avgArea) + ' ' + unitSq;
+      perimEl.textContent = fmt(perimeter) + ' ' + unit;
+      formulaNote.textContent = '(' + fmt(avg1) + ' × ' + fmt(avg2) + ')';
+
+      const areaM2 = toSquareMeters(avgArea, unit);
+      lastQuadAreaM2 = Number(areaM2.toFixed(2));
+      const { feddans, kirats, sahms, totalKirats, kiratSize } = computeFksFromSqm(areaM2);
+
+      feddanEl.textContent = feddans;
+      kiratEl.textContent = kirats;
+      sahmEl.textContent = fmt(sahms);
+      totalKiratsNote.textContent = 'إجمالي: ' + fmt(totalKirats) + ' قيراط (القيراط = ' + kiratSize + ' م²)';
+
+      const usedDiag = Math.sqrt(((a * c + b * d) * (a * d + b * c)) / (a * b + c * d));
+      drawCanvas(a, b, c, d, usedDiag);
+      updateStdFksBar();
+    }
+
+    function drawCanvas(a, b, c, d, diag) {
+      const canvas = document.getElementById('quadCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (!diag || isNaN(diag)) return;
+
+      const cosP3 = (c * c + d * d - diag * diag) / (2 * c * d);
+      const clampedCosP3 = Math.max(-0.95, Math.min(0.95, cosP3));
+      const sinP3 = Math.sqrt(1 - clampedCosP3 * clampedCosP3);
+
+      const P3 = { x: 0, y: 0 };
+      const P2 = { x: c, y: 0 };
+      const P0 = { x: d * clampedCosP3, y: d * sinP3 };
+
+      const dx = P2.x - P0.x;
+      const dy = P2.y - P0.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      const cosAlpha = Math.max(-0.95, Math.min(0.95, (a * a + dist * dist - b * b) / (2 * a * dist)));
+      const sinAlpha = Math.sqrt(1 - cosAlpha * cosAlpha);
+
+      const ux = dx / dist;
+      const uy = dy / dist;
+      const px = -uy;
+      const py = ux;
+
+      const P1 = {
+        x: P0.x + a * (ux * cosAlpha + px * sinAlpha),
+        y: P0.y + a * (uy * cosAlpha + py * sinAlpha)
+      };
+
+      const pts = [P0, P1, P2, P3];
+      const minX = Math.min(...pts.map(p => p.x));
+      const maxX = Math.max(...pts.map(p => p.x));
+      const minY = Math.min(...pts.map(p => p.y));
+      const maxY = Math.max(...pts.map(p => p.y));
+
+      const w = maxX - minX || 1;
+      const h = maxY - minY || 1;
+      const pad = 34;
+      const scale = Math.min((canvas.width - pad * 2) / w, (canvas.height - pad * 2) / h);
+
+      const toScreen = (p) => ({
+        x: (canvas.width - w * scale) / 2 + (p.x - minX) * scale,
+        y: canvas.height - ((canvas.height - h * scale) / 2 + (p.y - minY) * scale)
+      });
+
+      const sPts = pts.map(toScreen);
+
+      ctx.beginPath();
+      ctx.moveTo(sPts[0].x, sPts[0].y);
+      ctx.lineTo(sPts[1].x, sPts[1].y);
+      ctx.lineTo(sPts[2].x, sPts[2].y);
+      ctx.lineTo(sPts[3].x, sPts[3].y);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(59, 130, 246, 0.18)';
+      ctx.fill();
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = '#3b82f6';
+      ctx.stroke();
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 12px Cairo, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      const labels = ['أ (' + a + ')', 'ب (' + b + ')', 'ج (' + c + ')', 'د (' + d + ')'];
+      const cx = sPts.reduce((acc, p) => acc + p.x, 0) / 4;
+      const cy = sPts.reduce((acc, p) => acc + p.y, 0) / 4;
+
+      for (let i = 0; i < 4; i++) {
+        const pA = sPts[i];
+        const pB = sPts[(i + 1) % 4];
+        const mx = (pA.x + pB.x) / 2;
+        const my = (pA.y + pB.y) / 2;
+        const vx = mx - cx;
+        const vy = my - cy;
+        const vlen = Math.hypot(vx, vy) || 1;
+        ctx.fillText(labels[i], mx + (vx / vlen) * 18, my + (vy / vlen) * 15);
+
+        ctx.beginPath();
+        ctx.arc(pA.x, pA.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#3b82f6';
+        ctx.fill();
+        ctx.fillStyle = '#f8fafc';
+      }
+    }
+
+    // ================= STANDARD CALCULATOR LOGIC =================
+    let stdCurrent = '0';
+    let stdJustEvaluated = false;
+
+    function updateStdScreen() {
+      const disp = document.getElementById('stdDisplay');
+      const pretty = stdCurrent
+        .replace(/\*/g, ' × ')
+        .replace(/\//g, ' ÷ ')
+        .replace(/\+/g, ' + ')
+        .replace(/\-/g, ' − ');
+      disp.textContent = pretty || '0';
+      updateStdFksBar();
+    }
+
+    function updateStdFksBar() {
+      const fksEl = document.getElementById('stdFksResult');
+      if (!fksEl) return;
+      let numericVal = 0;
+      try {
+        const sanitized = stdCurrent.replace(/[^0-9+\-*/.%()]/g, '');
+        if (sanitized) {
+          const v = Function('"use strict"; return (' + sanitized + ')')();
+          if (typeof v === 'number' && isFinite(v) && v > 0) numericVal = v;
+        }
+      } catch (_) {}
+      const { feddans, kirats, sahms } = computeFksFromSqm(numericVal);
+      fksEl.textContent = `${feddans} ف ، ${kirats} ط ، ${fmt(sahms)} س`;
+    }
+
+    function stdAppend(ch) {
+      const isOp = ['+', '-', '*', '/', '%'].includes(ch);
+      if (stdJustEvaluated) {
+        if (isOp) {
+          stdJustEvaluated = false;
+        } else {
+          stdCurrent = '';
+          stdJustEvaluated = false;
+        }
+      }
+      if (stdCurrent === '0' && !isOp && ch !== '.') {
+        stdCurrent = ch;
+      } else {
+        stdCurrent += ch;
+      }
+      updateStdScreen();
+    }
+
+    function stdClear() {
+      stdCurrent = '0';
+      stdJustEvaluated = false;
+      document.getElementById('stdExpr').textContent = '';
+      updateStdScreen();
+    }
+
+    function stdBackspace() {
+      if (stdJustEvaluated) {
+        stdClear();
+        return;
+      }
+      stdCurrent = stdCurrent.slice(0, -1) || '0';
+      updateStdScreen();
+    }
+
+    function stdEvaluate() {
+      try {
+        const sanitized = stdCurrent.replace(/[^0-9+\-*/.%()]/g, '');
+        if (!sanitized) return;
+        const res = Function('"use strict"; return (' + sanitized + ')')();
+        if (typeof res === 'number' && isFinite(res)) {
+          document.getElementById('stdExpr').textContent = stdCurrent
+            .replace(/\*/g, ' × ')
+            .replace(/\//g, ' ÷ ')
+            .replace(/\+/g, ' + ')
+            .replace(/\-/g, ' − ') + ' =';
+          stdCurrent = String(Number(res.toFixed(4)));
+          stdJustEvaluated = true;
+          updateStdScreen();
+        }
+      } catch (_) {
+        document.getElementById('stdExpr').textContent = 'خطأ في العملية';
+      }
+    }
+
+    function addQuadAreaToStdCalc() {
+      if (!lastQuadAreaM2 || lastQuadAreaM2 <= 0) return;
+      if (stdCurrent === '0') {
+        stdCurrent = String(lastQuadAreaM2);
+        stdJustEvaluated = false;
+      } else {
+        const lastChar = stdCurrent.slice(-1);
+        if (['+', '-', '*', '/'].includes(lastChar)) {
+          stdCurrent += String(lastQuadAreaM2);
+        } else {
+          stdCurrent += '+' + String(lastQuadAreaM2);
+        }
+        stdJustEvaluated = false;
+        stdEvaluate();
+        return;
+      }
+      updateStdScreen();
+    }
+
+    calculate();
+    updateStdScreen();
+  </script>
+</body>
+</html>

@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <title>بوابة الحواتكة المكانية — واجهة الموبايل الذكية</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-card: rgba(15, 23, 42, 0.98);
+      --border: rgba(148, 163, 184, 0.35);
+      --emerald: #10b981;
+      --gold: #facc15;
+      --danger: #ef4444;
+      --blue: #3b82f6;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      background: var(--bg-dark);
+      color: #f8fafc;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    #map {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    /* ================= TOP CONTROLS & CARD CONTAINER ================= */
+    .top-controls-bar {
+      position: fixed;
+      top: 8px;
+      left: 8px;
+      right: 8px;
+      z-index: 1100;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      pointer-events: none;
+    }
+
+    .top-nav {
+      display: flex;
+      gap: 6px;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 6px 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+      pointer-events: auto;
+    }
+
+    .top-btn {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 9px 4px;
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 8px;
+      color: #f1f5f9;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+    .top-btn:active {
+      transform: scale(0.96);
+      filter: brightness(1.2);
+    }
+    .top-btn-blue {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.4), rgba(30, 58, 138, 0.6));
+      border-color: #3b82f6;
+      color: #93c5fd;
+    }
+    .top-btn-green {
+      background: rgba(16, 185, 129, 0.25);
+      border-color: #10b981;
+      color: #6ee7b7;
+    }
+    .top-btn-red {
+      background: rgba(239, 68, 68, 0.25);
+      border-color: #ef4444;
+      color: #fca5a5;
+    }
+    .top-btn-gray {
+      background: rgba(51, 65, 85, 0.8);
+      color: #cbd5e1;
+    }
+
+    .hint-pill {
+      align-self: center;
+      background: rgba(15, 23, 42, 0.94);
+      border: 1.5px solid rgba(250, 204, 21, 0.5);
+      color: #fde047;
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 12.5px;
+      font-weight: 800;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+      pointer-events: auto;
+      text-align: center;
+    }
+
+    /* ================= BIG TOP CARD (1/3 OF SCREEN, BIG READABLE FONTS) ================= */
+    .mobile-land-card {
+      display: none;
+      pointer-events: auto;
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 2px solid #3b82f6;
+      border-radius: 16px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85);
+      height: 38vh;
+      min-height: 250px;
+      max-height: 48vh;
+      overflow-y: auto;
+      flex-direction: column;
+      animation: slideDown 0.25s ease-out;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+    }
+    .mobile-land-card.active {
+      display: flex;
+    }
+
+    @keyframes slideDown {
+      from { transform: translateY(-30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .card-top-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: linear-gradient(135deg, #1e3a8a, #0f172a);
+      border-bottom: 1.5px solid rgba(148, 163, 184, 0.3);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .card-title-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .card-land-title {
+      font-size: 18px;
+      font-weight: 900;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-owner-badge {
+      font-size: 12.5px;
+      background: rgba(250, 204, 21, 0.2);
+      color: #facc15;
+      padding: 3px 9px;
+      border-radius: 6px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .card-close-btn {
+      background: rgba(239, 68, 68, 0.25);
+      border: 1.5px solid #ef4444;
+      color: #fca5a5;
+      width: 34px;
+      height: 34px;
+      min-width: 34px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 900;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .card-close-btn:active {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .card-content {
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Area Primary Highlight Box */
+    .area-hero-box {
+      background: linear-gradient(135deg, rgba(6, 78, 59, 0.6), rgba(15, 23, 42, 0.85));
+      border: 1.5px solid #10b981;
+      border-radius: 12px;
+      padding: 10px 12px;
+      text-align: center;
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
+    }
+
+    .area-feddan-text {
+      font-size: 21px;
+      font-weight: 900;
+      color: #34d399;
+      line-height: 1.3;
+      margin-bottom: 2px;
+    }
+
+    .area-sqm-text {
+      font-size: 17px;
+      font-weight: 800;
+      color: #fde047;
+    }
+
+    .area-qirat-math {
+      font-size: 12.5px;
+      color: #cbd5e1;
+      margin-top: 4px;
+      font-weight: 700;
+    }
+
+    /* 4 Cardinal Sides Grid (Big Bold Numbers) */
+    .sides-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .side-pill {
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 10px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .side-lbl {
+      font-size: 13px;
+      font-weight: 800;
+      color: #cbd5e1;
+    }
+    .side-val {
+      font-size: 16px;
+      font-weight: 900;
+      color: #facc15;
+    }
+
+    /* Customary Area Note */
+    .urfi-box {
+      background: rgba(234, 179, 8, 0.12);
+      border: 1px dashed rgba(234, 179, 8, 0.5);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 12px;
+      color: #fde047;
+      line-height: 1.5;
+    }
+
+    /* Card Action Footer */
+    .card-footer {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .card-action-btn {
+      flex: 1;
+      padding: 9px 6px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 800;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    /* ================= MAP LABELS (LARGER FOR HIGH-DPI MOBILE SCREENS) ================= */
+    .lbl {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1.5px solid #10b981;
+      border-radius: 8px;
+      padding: 6px 10px;
+      color: #fff;
+      text-align: center;
+      white-space: nowrap;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.85);
+      pointer-events: auto;
+      line-height: 1.35;
+      cursor: pointer;
+    }
+    .lbl:active {
+      filter: brightness(1.3);
+      transform: scale(1.05);
+    }
+    .lbl-name {
+      font-size: 14px;
+      font-weight: 900;
+      color: #f8fafc;
+    }
+    .lbl-area {
+      font-size: 13px;
+      font-weight: 800;
+      color: #fde047;
+    }
+    .lbl-feddan {
+      font-size: 12px;
+      font-weight: 800;
+      color: #6ee7b7;
+    }
+
+    /* Boundary Dimensions (Big Yellow Badges) */
+    .dim-lbl {
+      background: #facc15;
+      color: #020617;
+      border: 1.5px solid #000;
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 14.5px;
+      font-weight: 900;
+      white-space: nowrap;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.7);
+      pointer-events: none;
+    }
+
+    /* Leaflet Zoom Control at Bottom Right */
+    .leaflet-bottom.leaflet-right {
+      bottom: 25px !important;
+      right: 14px !important;
+    }
+    .leaflet-control-zoom {
+      border-radius: 12px !important;
+      overflow: hidden;
+      border: 1.5px solid rgba(148, 163, 184, 0.45) !important;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.7) !important;
+    }
+    .leaflet-control-zoom a {
+      background: #0f172a !important;
+      color: #fff !important;
+      width: 42px !important;
+      height: 42px !important;
+      line-height: 42px !important;
+      font-size: 22px !important;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.25) !important;
+    }
+
+    /* ================= MODALS ================= */
+    .mob-modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.8);
+      backdrop-filter: blur(5px);
+      z-index: 3000;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+    .mob-modal-box {
+      background: #0f172a;
+      border: 1.5px solid #3b82f6;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 500px;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: linear-gradient(135deg, #1e3a8a, #0f172a);
+      border-bottom: 1px solid var(--border);
+      font-size: 15px;
+      font-weight: 800;
+    }
+    .list-filter-bar {
+      padding: 8px 10px;
+      background: #1e293b;
+      border-bottom: 1px solid var(--border);
+    }
+    .list-filter-bar input {
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: 8px;
+      border: 1px solid #475569;
+      background: #090d16;
+      color: #fff;
+      font-size: 13.5px;
+      font-family: inherit;
+    }
+    .items-scroll {
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow-y: auto;
+    }
+    .item-card {
+      padding: 11px 12px;
+      border-radius: 10px;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+    .item-card:active {
+      background: rgba(59, 130, 246, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <!-- Top Controls Bar & Floating Big Land Card -->
+  <div class="top-controls-bar">
+    <!-- Top Action Buttons -->
+    <div class="top-nav" id="topNav">
+      <button type="button" class="top-btn" onclick="openParcelsModal()">
+        <span>📋 الأراضي (<span id="topCnt">46</span>)</span>
+      </button>
+      <button type="button" class="top-btn top-btn-blue" onclick="openDualCalcModal()">
+        <span>🧮 الحاسبة</span>
+      </button>
+      <button type="button" class="top-btn top-btn-green" id="btnToggleShapes" onclick="toggleShapes()">
+        <span id="txtToggleShapes">👁️ الخريطة: ظاهرة</span>
+      </button>
+      <a href="teach.html" class="top-btn top-btn-gray" onclick="sessionStorage.setItem('FORCE_DESKTOP', 'true')" title="التبديل إلى واجهة الكمبيوتر">
+        <span>💻 الكمبيوتر</span>
+      </a>
+    </div>
+
+    <!-- Friendly Tap Hint (Visible when no land selected) -->
+    <div class="hint-pill" id="tapHintPill">
+      👆 المس أي قطعة أرض لعرض بياناتها ومساحتها وأطوالها
+    </div>
+
+    <!-- Big Top Card (Takes ~1/3 of the screen when land is tapped) -->
+    <div class="mobile-land-card" id="mobileLandCard">
+      <div class="card-top-header">
+        <div class="card-title-group">
+          <span class="card-land-title" id="cardLandTitle">قطعة أرض #14</span>
+          <span class="card-owner-badge" id="cardOwnerBadge">المالك: غير محدد</span>
+        </div>
+        <button type="button" class="card-close-btn" onclick="closeCard()" title="إغلاق البطاقة">✖</button>
+      </div>
+
+      <div class="card-content">
+        <!-- Main Area Hero Box -->
+        <div class="area-hero-box">
+          <div class="area-feddan-text" id="cardFeddanText">0 فدان ، 0 قيراط ، 0 سهم</div>
+          <div class="area-sqm-text" id="cardSqmText">0 م²</div>
+          <div class="area-qirat-math" id="cardQiratMath">الحسبة: 0 م² ÷ 175 م² = 0 قيراط</div>
+        </div>
+
+        <!-- 4 Cardinal Sides Grid (Big Bold Numbers) -->
+        <div class="sides-grid">
+          <div class="side-pill">
+            <span class="side-lbl">⬆️ بحري (شمال):</span>
+            <span class="side-val" id="cardNorth">0.0 م</span>
+          </div>
+          <div class="side-pill">
+            <span class="side-lbl">⬇️ قبلي (جنوب):</span>
+            <span class="side-val" id="cardSouth">0.0 م</span>
+          </div>
+          <div class="side-pill">
+            <span class="side-lbl">➡️ شرقي:</span>
+            <span class="side-val" id="cardEast">0.0 م</span>
+          </div>
+          <div class="side-pill">
+            <span class="side-lbl">⬅️ غربي:</span>
+            <span class="side-val" id="cardWest">0.0 م</span>
+          </div>
+        </div>
+
+        <!-- Customary Area Note -->
+        <div class="urfi-box" id="cardUrfiBox">
+          📐 <b>المساحة العُرفية (متوسط الأضلاع):</b> <span id="cardUrfiVal">0 م²</span>
+          <div style="font-size:11px;color:#cbd5e1" id="cardUrfiEq"></div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="card-footer">
+          <button type="button" class="card-action-btn" style="background:#1e293b;color:#93c5fd;border-color:#3b82f6" onclick="zoomToCurrentLand()">
+            🔍 تكبير على الأرض
+          </button>
+          <button type="button" class="card-action-btn" style="background:linear-gradient(135deg,rgba(16,185,129,0.3),rgba(6,78,59,0.5));color:#6ee7b7;border-color:#10b981" onclick="sendToCalc()">
+            ➕ نقل للآلة الحاسبة
+          </button>
+          <button type="button" class="card-action-btn" style="background:rgba(239,68,68,0.2);color:#fca5a5;border-color:#ef4444" onclick="closeCard()">
+            ✖ إغلاق
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Parcels List Modal -->
+  <div class="mob-modal-backdrop" id="parcelsModalBackdrop">
+    <div class="mob-modal-box">
+      <div class="modal-hdr">
+        <span>📋 قائمة قطع الأراضي (<span id="modalCnt">46</span>)</span>
+        <button type="button" class="card-close-btn" onclick="closeParcelsModal()">✖</button>
+      </div>
+      <div class="list-filter-bar">
+        <input type="text" id="mobSearchInp" placeholder="🔍 ابحث بالاسم أو رقم القطعة أو المالك..." oninput="renderParcelsList()" />
+      </div>
+      <div class="items-scroll" id="parcelsListScroll"></div>
+    </div>
+  </div>
+
+  <!-- Dual Calculator Modal -->
+  <div class="mob-modal-backdrop" id="dualCalcBackdrop">
+    <div class="mob-modal-box" style="max-width:580px">
+      <div class="modal-hdr" style="background:linear-gradient(135deg, #1e3a8a, #0f172a)">
+        <span>🧮 الآلة الحاسبة المزدوجة المتطورة</span>
+        <button type="button" class="card-close-btn" onclick="closeDualCalcModal()">✖</button>
+      </div>
+      <div style="padding:12px;display:flex;flex-direction:column;gap:12px">
+        <iframe src="calc.html" style="width:100%;height:68vh;border:none;border-radius:10px;background:#090d16"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const PINS = [[27.2607972, 30.9682278], [27.2694056, 30.9823083], [27.2530194, 30.9948806], [27.2441917, 30.9814722]];
+    const SEEDED_FEATURES = [{"id": 1, "type": "parcel", "name": "قطعة أرض 1", "note": "", "coords": [[27.2609695, 30.9742463], [27.2599517, 30.9756088], [27.2598431, 30.9754425], [27.2599479, 30.9753071], [27.2599277, 30.9752843], [27.2599605, 30.9752199], [27.2598752, 30.975128], [27.2605082, 30.9741819], [27.2605821, 30.9741135], [27.2606703, 30.97408], [27.2607383, 30.9740746], [27.260805, 30.9740894], [27.2608825, 30.9741403]], "created": "2026-11-06T23:19:22.831Z"}, {"id": 2, "type": "parcel", "name": "قطعة أرض 2", "note": "", "coords": [[27.2581513, 30.9854552], [27.258286, 30.9858435], [27.2567821, 30.9868272], [27.2566581, 30.9865556]], "created": "2026-11-06T23:20:34.130Z", "qiratSqm": 175, "owner": "قطعة أرض 2", "code": "HW-002", "basin": "", "status": "ملك خاص", "crop": "", "phone": "", "areaMethod": "urfi"}, {"id": 4, "type": "parcel", "name": "قطعة أرض 4", "note": "", "coords": [[27.2567821, 30.9868272], [27.2569783, 30.9871571], [27.2572918, 30.9869854], [27.2571118, 30.9866019]], "created": "2026-11-06T23:32:32.768Z", "areaMethod": "geo"}, {"id": 5, "type": "road", "name": "طريق / فاصل 1", "note": "", "coords": [[27.2542016, 30.9862652], [27.2542411, 30.9862465], [27.2539767, 30.9835643], [27.2539433, 30.9826308], [27.2539696, 30.9824967], [27.2541173, 30.9823492], [27.2548444, 30.9817404], [27.2559814, 30.9807667], [27.2562627, 30.9805468], [27.2562865, 30.9804931], [27.2568753, 30.9796295], [27.2578178, 30.9782186], [27.2580348, 30.9779397], [27.2582207, 30.9776714], [27.258326, 30.9774944], [27.2584185, 30.9773335], [27.25844, 30.9772906], [27.2588669, 30.9766361], [27.259153, 30.9762204], [27.2594056, 30.9758368], [27.2596082, 30.9755203], [27.2597346, 30.9753513], [27.2598752, 30.975128], [27.2605082, 30.9741819], [27.2605821, 30.9741135], [27.2606703, 30.97408], [27.2607383, 30.9740746], [27.260805, 30.9740894], [27.2608825, 30.9741403], [27.2609695, 30.9742463], [27.2611698, 30.9744823], [27.2613844, 30.9748283], [27.2619969, 30.9758475], [27.2622734, 30.9763357], [27.2626548, 30.9769553], [27.2627597, 30.9770948], [27.2628622, 30.9772477], [27.2629337, 30.9773925], [27.2631625, 30.9777626], [27.2633747, 30.9780738], [27.2636392, 30.9785056], [27.2636488, 30.9784734], [27.2635939, 30.9783661], [27.2630958, 30.9775722], [27.2628407, 30.9771484], [27.2626048, 30.976781], [27.2624284, 30.9764993], [27.2621948, 30.9760997], [27.2619755, 30.9757268], [27.2616728, 30.9752333], [27.2612866, 30.9745681], [27.261034, 30.974206], [27.2609601, 30.9740987], [27.2608886, 30.9740451], [27.2608051, 30.9740156], [27.2607074, 30.9740102], [27.2606097, 30.9740344], [27.2605286, 30.9740826], [27.2604548, 30.9741551], [27.2602402, 30.9744769], [27.2597611, 30.9751931], [27.259456, 30.9756678], [27.2589245, 30.9764752], [27.258381, 30.9772986], [27.2578321, 30.9781167], [27.2575342, 30.9785432], [27.256862, 30.9795409], [27.2565545, 30.9799969], [27.2562732, 30.9803537], [27.2561302, 30.9805334], [27.2555748, 30.9809867], [27.2552267, 30.9812978], [27.2541898, 30.9821776], [27.2538871, 30.982478], [27.2538966, 30.9825987], [27.2539181, 30.9830332], [27.2539423, 30.9836581]], "created": "2026-11-06T23:35:43.423Z"}, {"id": 6, "type": "drain", "name": "مصرف / مسقى 1", "note": "", "coords": [[27.2599277, 30.9752843], [27.2599229, 30.975293], [27.2599378, 30.9753051], [27.2598317, 30.9754432], [27.2599563, 30.9756303], [27.2601803, 30.9760071], [27.2603585, 30.9763028], [27.2603913, 30.9763552], [27.2604711, 30.9765047], [27.2605564, 30.9766589], [27.2605951, 30.9767246], [27.2606136, 30.9767568], [27.2606434, 30.9768031], [27.2608233, 30.9770713], [27.2608352, 30.9770854], [27.2608388, 30.9770773], [27.2607333, 30.9769271], [27.2606511, 30.9768004], [27.2606106, 30.976738], [27.2605552, 30.9766408], [27.2605063, 30.9765556], [27.2604646, 30.9764785], [27.2604163, 30.9763853], [27.2603704, 30.9763089], [27.2603228, 30.9762311], [27.2601923, 30.9760125], [27.2600552, 30.9757838], [27.2599517, 30.9756088], [27.2598431, 30.9754425], [27.2599479, 30.9753071]], "created": "2026-11-06T23:37:36.432Z"}, {"id": 7, "type": "building", "name": "مبنى / بيوت 1", "note": "", "coords": [[27.2599605, 30.9752199], [27.2599229, 30.975293], [27.2599378, 30.9753051], [27.2598317, 30.9754432], [27.2597406, 30.975346], [27.2598752, 30.975128]], "created": "2026-11-06T23:37:58.877Z"}, {"id": 9, "type": "building", "name": "مبنى / بيوت 3", "note": "", "coords": [[27.2549211, 30.9861559], [27.2549777, 30.9862921], [27.2548943, 30.986331], [27.2548776, 30.9862787], [27.2547966, 30.9863202], [27.254768, 30.9862404]], "created": "2026-11-06T23:39:05.329Z"}, {"id": 10, "type": "building", "name": "مبنى / بيوت 4", "note": "", "coords": [[27.2584327, 30.9774334], [27.2584762, 30.9774783], [27.2584315, 30.9775306], [27.2583916, 30.9775011], [27.2584166, 30.977475], [27.2584095, 30.9774642]], "created": "2026-11-06T23:40:11.808Z"}, {"id": 12, "type": "parcel", "name": "قطعة أرض 6", "note": "", "coords": [[27.260891, 30.977186], [27.2598255, 30.9786719], [27.2597564, 30.9786129], [27.2606782, 30.9772926], [27.2608254, 30.9771062]], "created": "2026-11-06T23:41:34.749Z"}, {"id": 13, "type": "parcel", "name": "قطعة أرض 7", "note": "", "coords": [[27.2594746, 30.9797689], [27.2588875, 30.9805964], [27.2588792, 30.9805937], [27.2588643, 30.9805937], [27.2588506, 30.9806018], [27.2585056, 30.9810738], [27.2583852, 30.9809598], [27.259328, 30.9796415]], "created": "2026-11-06T23:42:00.291Z", "areaMethod": "geo"}, {"id": 14, "type": "parcel", "name": "قطعة أرض 8", "note": "", "coords": [[27.2598848, 30.9840739], [27.2591554, 30.9847337], [27.2589838, 30.9844708], [27.2596584, 30.9837011]], "created": "2026-11-06T23:42:27.551Z", "areaMethod": "geo"}, {"id": 15, "type": "parcel", "name": "قطعة أرض 9", "note": "", "coords": [[27.2603164, 30.9833604], [27.2597396, 30.9838352], [27.2594679, 30.983406], [27.2599803, 30.9828159]], "created": "2026-11-06T23:42:40.900Z"}, {"id": 16, "type": "canal", "name": "ترعة / مجرى ماء 1", "note": "", "coords": [[27.2636488, 30.9784734], [27.2637284, 30.9783876], [27.2631614, 30.9774971], [27.2625083, 30.9763813], [27.2617694, 30.9751958], [27.2614017, 30.9746164], [27.2613517, 30.9746701], [27.2617188, 30.9753031], [27.2621692, 30.9760514], [27.2625887, 30.9767514], [27.2630958, 30.9775722], [27.2635939, 30.9783661]], "created": "2026-11-06T23:43:48.432Z"}, {"id": 17, "type": "canal", "name": "ترعة / مجرى ماء 2", "note": "", "coords": [[27.2612866, 30.9745681], [27.2613416, 30.9745722], [27.2613667, 30.97454], [27.2610891, 30.9740987], [27.2609795, 30.9739834], [27.260846, 30.9739056], [27.2606696, 30.9739029], [27.2605218, 30.9739351], [27.2603001, 30.9742007], [27.259709, 30.9751153], [27.2592132, 30.975877], [27.2587889, 30.9764993], [27.2582788, 30.9772584], [27.2577282, 30.9780818], [27.2570941, 30.9790179], [27.2565875, 30.9798092], [27.256218, 30.9802786], [27.2559319, 30.9805951], [27.2554909, 30.9809545], [27.2554886, 30.9809947], [27.2555219, 30.9810323], [27.2561302, 30.9805334], [27.2565545, 30.9799969], [27.2578321, 30.9781167], [27.2585949, 30.9769687], [27.2590788, 30.9762365], [27.2595675, 30.9754854], [27.2600776, 30.9747183], [27.2604548, 30.9741551], [27.2605286, 30.9740826], [27.2606097, 30.9740344], [27.2607074, 30.9740102], [27.2608051, 30.9740156], [27.2608886, 30.9740451], [27.2609601, 30.9740987], [27.2612866, 30.9745681], [27.2613416, 30.9745722]], "created": "2026-11-06T23:45:33.130Z"}, {"id": 18, "type": "canal", "name": "ترعة / مجرى ماء 3", "note": "", "coords": [[27.2554572, 30.9810913], [27.2554308, 30.9810524], [27.2553736, 30.9810671], [27.2552759, 30.9811315], [27.2541675, 30.9820729], [27.2533809, 30.982765], [27.2532379, 30.9827703], [27.2530662, 30.9827274], [27.2529423, 30.9825772], [27.2517122, 30.9802544], [27.2514023, 30.9796214], [27.2513165, 30.9794068], [27.2513594, 30.9791011], [27.2514977, 30.9787309], [27.2515215, 30.9785217], [27.25145, 30.978291], [27.2513403, 30.9780765], [27.2512736, 30.9779692], [27.2512116, 30.9780282], [27.2513213, 30.9782267], [27.2514071, 30.9784466], [27.2514262, 30.97857], [27.2513737, 30.9787953], [27.2513117, 30.9789401], [27.2512547, 30.9791413], [27.251244, 30.9792794], [27.2512475, 30.9794256], [27.2513048, 30.9796482], [27.2516135, 30.9802236], [27.2519865, 30.9809652], [27.2523214, 30.9816062], [27.2526864, 30.9822969], [27.2528759, 30.9826644], [27.2529546, 30.9827676], [27.2530523, 30.9828334], [27.2531989, 30.9828776], [27.2533324, 30.9828722], [27.253479, 30.9828146], [27.2535791, 30.9827247], [27.2537126, 30.9826], [27.2538871, 30.982478], [27.2541898, 30.9821776]], "created": "2026-11-06T23:46:54.590Z"}, {"id": 19, "type": "drain", "name": "مصرف / مسقى 2", "note": "", "coords": [[27.2574624, 30.9840524], [27.2574755, 30.9840672], [27.2576472, 30.9839733], [27.2578557, 30.9837922], [27.258025, 30.9836622], [27.2581584, 30.9835629], [27.2581799, 30.9835763], [27.2584648, 30.9840766], [27.2586864, 30.9844467], [27.2587007, 30.9844266], [27.2586352, 30.984322], [27.2584767, 30.9840618], [27.258336, 30.9838191], [27.2582121, 30.9836045], [27.2581793, 30.9835421], [27.2581531, 30.9835415], [27.2579487, 30.9836917], [27.2577687, 30.9838251], [27.2576823, 30.983917], [27.2575404, 30.9840055]], "created": "2026-11-06T23:47:40.753Z"}, {"id": 20, "type": "drain", "name": "مصرف / مسقى 3", "note": "", "coords": [[27.2564824, 30.9862666], [27.2564275, 30.986174], [27.2563012, 30.9859662], [27.256151, 30.9857301], [27.2556866, 30.9861606], [27.2556907, 30.9861714], [27.2561479, 30.9857415], [27.2561873, 30.9858019], [27.2563589, 30.9860768], [27.2564739, 30.9862679]], "created": "2026-11-06T23:48:47.954Z"}, {"id": 21, "type": "parcel", "name": "قطعة أرض 10", "note": "", "coords": [[27.2564739, 30.9862679], [27.2559388, 30.9866863], [27.2556907, 30.9861714], [27.2561479, 30.9857415], [27.2561873, 30.9858019]], "created": "2026-11-06T23:49:19.799Z", "color": "#22c55e", "areaMethod": "geo"}, {"id": 22, "type": "drain", "name": "مصرف / مسقى 4", "note": "", "coords": [[27.256133, 30.9857462], [27.2559638, 30.9854405], [27.2559584, 30.9854163], [27.2558451, 30.9852138], [27.2558356, 30.9851924], [27.2556525, 30.9846868], [27.2556215, 30.9845976], [27.2556048, 30.9845466], [27.2555232, 30.9843247], [27.2553957, 30.9839626], [27.2553218, 30.9837587], [27.2552759, 30.983636], [27.2552675, 30.9836427], [27.2553694, 30.9839116], [27.2554981, 30.9842784], [27.2555995, 30.9845553], [27.2556173, 30.984611], [27.2556632, 30.9847371], [27.2558283, 30.9851957], [27.255836, 30.9852165], [27.2558545, 30.9852447], [27.2559511, 30.985419], [27.2559564, 30.9854472], [27.2559803, 30.985482], [27.2561203, 30.9857368], [27.2561269, 30.9857516]], "created": "2026-11-06T23:50:54.738Z"}, {"id": 23, "type": "parcel", "name": "قطعة أرض 11", "note": "", "coords": [[27.2550851, 30.983052], [27.2552675, 30.9836427], [27.2540838, 30.9845848], [27.2539968, 30.983744], [27.2543544, 30.9835106]], "created": "2026-11-06T23:51:52.664Z", "qiratSqm": 175, "owner": "قطعة أرض 11", "code": "HW-023", "basin": "", "status": "ملك خاص", "crop": "", "phone": ""}, {"id": 24, "type": "parcel", "name": "قطعة أرض 12", "note": "", "coords": [[27.2549682, 30.9858026], [27.2547834, 30.9859018], [27.2542392, 30.9862592], [27.2542411, 30.9862465], [27.2541851, 30.9856819], [27.2547608, 30.9853815]], "created": "2026-11-06T23:52:43.779Z"}, {"id": 25, "type": "parcel", "name": "قطعة أرض 13", "note": "", "coords": [[27.2547608, 30.9853815], [27.2546714, 30.9851776], [27.2541613, 30.9854458], [27.2541851, 30.9856819]], "created": "2026-11-06T23:52:51.052Z"}, {"id": 26, "type": "parcel", "name": "قطعة أرض 14", "note": "", "coords": [[27.2553414, 30.9856389], [27.2558491, 30.9853023], [27.2557907, 30.9851789], [27.2556906, 30.9848973], [27.2548122, 30.9854633], [27.2549218, 30.9856765], [27.2552389, 30.9854539]], "created": "2026-11-06T23:53:22.365Z", "areaMethod": "geo"}, {"id": 27, "type": "parcel", "name": "قطعة أرض 15", "note": "", "coords": [[27.2556906, 30.9848973], [27.2556167, 30.9846626], [27.2547208, 30.9852688], [27.2548122, 30.9854633]], "created": "2026-11-06T23:53:45.672Z"}, {"id": 28, "type": "drain", "name": "مصرف / مسقى 5", "note": "", "coords": [[27.2549682, 30.9858026], [27.2547608, 30.9853815], [27.2546714, 30.9851776], [27.254588, 30.9849912], [27.2545404, 30.9848598], [27.2544855, 30.9846546], [27.2544653, 30.9845594], [27.2544307, 30.9844534], [27.2543735, 30.9843528], [27.2543811, 30.9843468], [27.2544365, 30.9844474], [27.2544759, 30.9845667], [27.2545015, 30.9846767], [27.2545462, 30.9848417], [27.2545545, 30.9848712], [27.2545921, 30.9849758], [27.2546809, 30.9851776], [27.2547208, 30.9852688], [27.2548122, 30.9854633], [27.2549218, 30.9856765], [27.25498, 30.9858059]], "created": "2026-11-06T23:54:43.881Z"}, {"id": 29, "type": "drain", "name": "مصرف / مسقى 6", "note": "", "coords": [[27.2542392, 30.9862592], [27.2542422, 30.9862693], [27.2546659, 30.985999], [27.2548226, 30.9858938], [27.25498, 30.9858059], [27.2549682, 30.9858026], [27.2547834, 30.9859018]], "created": "2026-11-06T23:55:08.302Z"}, {"id": 30, "type": "parcel", "name": "قطعة أرض 16", "note": "", "coords": [[27.2579059, 30.9852219], [27.2564824, 30.9862666], [27.256151, 30.9857301], [27.256133, 30.9857462], [27.2559584, 30.9854163], [27.2559412, 30.9853841], [27.2570105, 30.9845513], [27.2569998, 30.9845245], [27.257312, 30.9842831]], "created": "2026-11-06T23:55:47.786Z", "areaMethod": "geo"}, {"id": 31, "type": "parcel", "name": "قطعة أرض 17", "note": "", "coords": [[27.2559412, 30.9853841], [27.2570105, 30.9845513], [27.256785, 30.9841731], [27.255742, 30.9849255], [27.2558356, 30.9851924]], "created": "2026-11-06T23:56:02.224Z"}, {"id": 32, "type": "parcel", "name": "قطعة أرض 18", "note": "", "coords": [[27.2566565, 30.9827355], [27.2560486, 30.9832236], [27.255703, 30.9826121], [27.2562965, 30.9821346]], "created": "2026-11-06T23:56:17.482Z"}, {"id": 33, "type": "parcel", "name": "قطعة أرض 19", "note": "", "coords": [[27.2598371, 30.9754553], [27.2584389, 30.9773858], [27.2584137, 30.9773422], [27.25844, 30.9772906], [27.2596082, 30.9755203], [27.2597406, 30.975346]], "created": "2026-11-06T23:57:12.369Z"}, {"id": 34, "type": "parcel", "name": "قطعة أرض 20", "note": "", "coords": [[27.2613726, 30.9748109], [27.2603228, 30.9762311], [27.2604358, 30.9764108], [27.2614822, 30.9749919]], "created": "2026-11-06T23:57:34.623Z"}, {"id": 35, "type": "parcel", "name": "قطعة أرض 21", "note": "", "coords": [[27.2609695, 30.9742463], [27.2611698, 30.9744823], [27.2613726, 30.9748109], [27.2603228, 30.9762311], [27.2599517, 30.9756088]], "created": "2026-11-06T23:57:51.709Z"}, {"id": 36, "type": "parcel", "name": "قطعة أرض 22", "note": "", "coords": [[27.2585508, 30.9775776], [27.2599896, 30.9756873], [27.2598371, 30.9754553], [27.2584389, 30.9773858], [27.2584238, 30.9774213], [27.2584327, 30.9774334], [27.2584762, 30.9774783], [27.2584685, 30.9774891]], "created": "2026-11-06T23:58:21.312Z"}, {"id": 37, "type": "parcel", "name": "قطعة أرض 23", "note": "", "coords": [[27.2578594, 30.9782012], [27.2580203, 30.9780161], [27.2581896, 30.9777586], [27.2583171, 30.9775816], [27.2583755, 30.977532], [27.2584315, 30.9775306], [27.2584613, 30.9774998], [27.2585942, 30.9776574], [27.2580549, 30.9783983]], "created": "2026-11-06T23:58:45.216Z"}, {"id": 38, "type": "parcel", "name": "قطعة أرض 24", "note": "", "coords": [[27.2563325, 30.9805951], [27.2569141, 30.9797099], [27.2579248, 30.9812254], [27.2573813, 30.9820408], [27.2573289, 30.9819925], [27.2572335, 30.982089]], "created": "2026-11-06T23:59:05.485Z", "qiratSqm": 175, "owner": "قطعة أرض 24", "code": "HW-038", "basin": "", "status": "ملك خاص", "crop": "", "phone": ""}, {"id": 39, "type": "parcel", "name": "قطعة أرض 25", "note": "", "coords": [[27.2564298, 30.9835991], [27.2555001, 30.9842375], [27.2552759, 30.983636], [27.2559696, 30.9831056], [27.2560459, 30.983235], [27.2561662, 30.9831532]], "created": "2026-11-06T23:59:27.154Z"}, {"id": 40, "type": "parcel", "name": "قطعة أرض 26", "note": "", "coords": [[27.2555001, 30.9842375], [27.2554946, 30.9842429], [27.255742, 30.9849255], [27.256785, 30.9841731], [27.2564298, 30.9835991]], "created": "2026-11-07T00:00:55.114Z"}, {"id": 41, "type": "parcel", "name": "قطعة أرض 27", "note": "", "coords": [[27.2563945, 30.9835374], [27.2569022, 30.9831271], [27.2574624, 30.9840524], [27.257286, 30.9842375], [27.257312, 30.9842831], [27.2569998, 30.9845245]], "created": "2026-11-07T00:01:07.509Z", "areaMethod": "geo"}, {"id": 42, "type": "parcel", "name": "قطعة أرض 28", "note": "", "coords": [[27.2569022, 30.9831271], [27.2566659, 30.9827435], [27.2561662, 30.9831532], [27.2563945, 30.9835374]], "created": "2026-11-07T00:01:22.516Z"}, {"id": 44, "type": "parcel", "name": "قطعة أرض 30", "note": "", "coords": [[27.2535996, 30.9867775], [27.2539024, 30.9866649], [27.2532754, 30.9841409], [27.2530131, 30.984326]], "created": "2026-11-07T10:39:34.474Z", "qiratSqm": 171.35, "owner": "قطعة أرض 30", "code": "HW-044", "basin": "", "status": "ملك خاص", "crop": "", "phone": ""}, {"id": 45, "type": "parcel", "name": "سلطان عبد العظيم", "note": "", "coords": [[27.2539024, 30.9866649], [27.2542254, 30.9865113], [27.25395, 30.9836501], [27.2532754, 30.9841409]], "created": "2026-11-07T10:39:46.038Z", "qiratSqm": 175, "owner": "سلطان عبد العظيم", "code": "HW-045", "basin": "", "status": "ملك خاص", "crop": "", "phone": "", "color": "#a855f7"}, {"id": 46, "type": "parcel", "name": "قطعة أرض 31", "note": "", "coords": [[27.2599896, 30.9756873], [27.2603913, 30.9763552], [27.2606136, 30.9767568], [27.2608352, 30.9770854], [27.2608224, 30.9770962], [27.2607354, 30.9772048], [27.2605679, 30.9774369], [27.2604607, 30.9775951], [27.260376, 30.9777071], [27.2603045, 30.9778117], [27.2602235, 30.9779304], [27.2601411, 30.9780451], [27.260016, 30.9782208], [27.2599177, 30.9783596], [27.2598194, 30.9785031], [27.2597444, 30.9786125], [27.2597926, 30.9786708], [27.2596473, 30.978864], [27.2593604, 30.9785688], [27.2591274, 30.9783032], [27.2588167, 30.9779163], [27.2585508, 30.9775776]], "created": "2026-11-07T12:29:40.788Z", "areaMethod": "geo"}, {"id": 47, "type": "parcel", "name": "قطعة أرض 32", "owner": "قطعة أرض 32", "code": "HW-047", "qiratSqm": 175, "areaMethod": "geo", "basin": "", "status": "ملك خاص", "crop": "", "phone": "", "color": "#22c55e", "note": "", "coords": [[27.2608886, 30.9771457], [27.2619129, 30.9757081], [27.2620606, 30.9759605], [27.2610567, 30.9773087]], "created": "2026-11-07T17:18:48.057Z"}, {"id": 48, "type": "parcel", "name": "سلطان عبد العظيم", "owner": "سلطان عبد العظيم", "code": "HW-048", "qiratSqm": 175, "areaMethod": "geo", "basin": "", "status": "ملك خاص", "crop": "", "phone": "", "color": "#a855f7", "note": "", "coords": [[27.2621201, 30.9760655], [27.2611413, 30.9774153], [27.2610567, 30.9773087], [27.2620606, 30.9759605]], "created": "2026-11-07T17:20:22.091Z"}, {"id": 49, "type": "parcel", "name": "سلطان عبد العظيم", "owner": "سلطان عبد العظيم", "code": "HW-049", "qiratSqm": 175, "areaMethod": "geo", "basin": "", "status": "ملك خاص", "crop": "", "phone": "", "color": "#a855f7", "note": "", "coords": [[27.2605369, 30.9781207], [27.2610763, 30.9773583], [27.2617505, 30.9782253], [27.2611474, 30.9790716], [27.2606253, 30.9785593], [27.2607636, 30.9783487]], "created": "2026-11-07T17:22:43.581Z"}, {"id": 50, "type": "parcel", "name": "قطعة أرض 34", "owner": "", "code": "HW-050", "qiratSqm": 175, "areaMethod": "geo", "basin": "", "status": "ملك خاص", "crop": "", "phone": "", "color": "#22c55e", "note": "", "coords": [[27.2626638, 30.9769674], [27.2621201, 30.9760655], [27.2611413, 30.9774153], [27.2617571, 30.9782173]], "created": "2026-11-07T17:25:43.816Z"}];
+    let features = [...SEEDED_FEATURES];
+    let selectedId = null;
+    let showShapes = true;
+
+    // Leaflet Map Init
+    const map = L.map('map', { zoomControl: false, maxZoom: 21, doubleClickZoom: false })
+      .fitBounds(L.latLngBounds(PINS), { padding: [30, 30] });
+
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    // Google Satellite Tile Layer
+    L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+      maxZoom: 21,
+      maxNativeZoom: 20
+    }).addTo(map);
+
+    // 4 Pins Boundary Polygon
+    L.polygon(PINS, {
+      color: '#facc15',
+      weight: 3,
+      dashArray: '6, 6',
+      fill: false,
+      interactive: false
+    }).addTo(map);
+
+    const featLayer = L.layerGroup().addTo(map);
+    const lblLayer = L.layerGroup().addTo(map);
+    const dimLayer = L.layerGroup().addTo(map);
+
+    // Math Helpers
+    function toRad(d) { return d * Math.PI / 180; }
+    function toDeg(r) { return r * 180 / Math.PI; }
+
+    function distMeters(p1, p2) {
+      const R = 6378137;
+      const dLat = toRad(p2[0] - p1[0]);
+      const dLng = toRad(p2[1] - p1[1]);
+      const lat1 = toRad(p1[0]), lat2 = toRad(p2[0]);
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+      return 2 * R * Math.asin(Math.sqrt(a));
+    }
+
+    function polygonAreaMeters(coords) {
+      if (!coords || coords.length < 3) return 0;
+      const R = 6378137;
+      let s = 0;
+      const n = coords.length;
+      for (let i = 0; i < n; i++) {
+        const p1 = coords[i], p2 = coords[(i + 1) % n];
+        s += toRad(p2[1] - p1[1]) * (2 + Math.sin(toRad(p1[0])) + Math.sin(toRad(p2[0])));
+      }
+      return Math.abs(s * R * R / 2.0);
+    }
+
+    function computeFeddanParts(sqm, qSize = 175) {
+      const feddanSqm = qSize * 24;
+      const faddans = Math.floor(sqm / feddanSqm);
+      const remAfterFaddan = sqm - faddans * feddanSqm;
+      const qirats = Math.floor(remAfterFaddan / qSize);
+      const remAfterQirat = remAfterFaddan - qirats * qSize;
+      const sahms = Math.round((remAfterQirat / (qSize / 24)) * 10) / 10;
+      return { faddans, qirats, sahms, totalQirats: sqm / qSize };
+    }
+
+    function feddanText(sqm, qSize = 175) {
+      const p = computeFeddanParts(sqm, qSize);
+      const parts = [];
+      if (p.faddans > 0) parts.push(`${p.faddans} فدان`);
+      if (p.qirats > 0) parts.push(`${p.qirats} قيراط`);
+      if (p.sahms > 0 || !parts.length) parts.push(`${p.sahms} سهم`);
+      return parts.join(' ، ');
+    }
+
+    function computeCardinalSides(coords) {
+      if (!coords || coords.length < 3) return { north: 0, south: 0, east: 0, west: 0 };
+      const n = coords.length;
+      const segs = [];
+      for (let i = 0; i < n; i++) {
+        const p1 = coords[i], p2 = coords[(i + 1) % n];
+        const len = distMeters(p1, p2);
+        const dLat = p2[0] - p1[0];
+        const dLng = (p2[1] - p1[1]) * Math.cos(toRad((p1[0] + p2[0]) / 2));
+        let angle = toDeg(Math.atan2(dLng, dLat));
+        if (angle < 0) angle += 360;
+        segs.push({ len, angle });
+      }
+      let north = 0, south = 0, east = 0, west = 0;
+      segs.forEach(s => {
+        const a = s.angle;
+        if (a >= 315 || a < 45) north += s.len;
+        else if (a >= 45 && a < 135) east += s.len;
+        else if (a >= 135 && a < 225) south += s.len;
+        else west += s.len;
+      });
+      return { north, south, east, west };
+    }
+
+    function computePolygonCenter(coords) {
+      let lat = 0, lng = 0;
+      coords.forEach(p => { lat += p[0]; lng += p[1]; });
+      return [lat / coords.length, lng / coords.length];
+    }
+
+    // Render All Features on Map
+    function renderMap() {
+      featLayer.clearLayers();
+      lblLayer.clearLayers();
+      dimLayer.clearLayers();
+
+      if (!showShapes) return;
+
+      features.forEach(f => {
+        if (!f.coords || f.coords.length < 3) return;
+        const isSel = (f.id === selectedId);
+        const sqm = polygonAreaMeters(f.coords);
+        const qSize = f.qiratSqm || 175;
+        const color = f.color || '#10b981';
+
+        // Polygon
+        const poly = L.polygon(f.coords, {
+          color: isSel ? '#facc15' : color,
+          weight: isSel ? 4.5 : 2.5,
+          fillColor: color,
+          fillOpacity: isSel ? 0.45 : 0.28,
+          interactive: true
+        });
+
+        poly.on('click', e => {
+          L.DomEvent.stopPropagation(e);
+          selectLand(f.id);
+        });
+
+        featLayer.addLayer(poly);
+
+        // Center Big Label (Clickable!)
+        const center = computePolygonCenter(f.coords);
+        const dispName = f.owner ? f.owner : (f.name || `قطعة أرض #${f.id}`);
+        const lblHtml = `
+          <div class="lbl">
+            <div class="lbl-name">${dispName}</div>
+            <div class="lbl-area">${Math.round(sqm).toLocaleString('ar-EG')} م²</div>
+            <div class="lbl-feddan">${feddanText(sqm, qSize)}</div>
+          </div>
+        `;
+        const icon = L.divIcon({
+          className: 'mob-lbl-wrap',
+          html: lblHtml,
+          iconSize: [150, 56],
+          iconAnchor: [75, 28]
+        });
+        const lblMarker = L.marker(center, { icon, interactive: true });
+        lblMarker.on('click', e => {
+          L.DomEvent.stopPropagation(e);
+          selectLand(f.id);
+        });
+        lblLayer.addLayer(lblMarker);
+
+        // If selected: render dimension labels on edges
+        if (isSel) {
+          renderDimensions(f.coords);
+        }
+      });
+    }
+
+    function renderDimensions(coords) {
+      dimLayer.clearLayers();
+      const n = coords.length;
+      for (let i = 0; i < n; i++) {
+        const p1 = coords[i], p2 = coords[(i + 1) % n];
+        const len = distMeters(p1, p2);
+        const mid = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
+        const dimHtml = `<div class="dim-lbl">${len.toFixed(1)} م</div>`;
+        const icon = L.divIcon({
+          className: 'mob-dim-wrap',
+          html: dimHtml,
+          iconSize: [66, 26],
+          iconAnchor: [33, 13]
+        });
+        dimLayer.addLayer(L.marker(mid, { icon, interactive: false }));
+      }
+    }
+
+    function selectLand(id) {
+      selectedId = id;
+      const f = features.find(x => x.id === id);
+      if (!f) return;
+
+      const card = document.getElementById('mobileLandCard');
+      const hint = document.getElementById('tapHintPill');
+      card.classList.add('active');
+      hint.style.display = 'none';
+
+      const sqm = polygonAreaMeters(f.coords);
+      const qSize = f.qiratSqm || 175;
+      const parts = computeFeddanParts(sqm, qSize);
+      const sides = computeCardinalSides(f.coords);
+
+      document.getElementById('cardLandTitle').textContent = `قطعة أرض #${f.id}`;
+      document.getElementById('cardOwnerBadge').textContent = f.owner ? `المالك: ${f.owner}` : (f.name || 'غير محدد');
+      document.getElementById('cardFeddanText').textContent = feddanText(sqm, qSize);
+      document.getElementById('cardSqmText').textContent = `${Math.round(sqm).toLocaleString('ar-EG')} م²`;
+      document.getElementById('cardQiratMath').textContent = `الحسبة: ${Math.round(sqm)} م² ÷ ${qSize} م² = ${parts.totalQirats.toFixed(2)} قيراط`;
+
+      document.getElementById('cardNorth').textContent = `${sides.north.toFixed(1)} م`;
+      document.getElementById('cardSouth').textContent = `${sides.south.toFixed(1)} م`;
+      document.getElementById('cardEast').textContent = `${sides.east.toFixed(1)} م`;
+      document.getElementById('cardWest').textContent = `${sides.west.toFixed(1)} م`;
+
+      // Customary Area
+      const avgNS = (sides.north + sides.south) / 2;
+      const avgEW = (sides.east + sides.west) / 2;
+      const urfiSqm = avgNS * avgEW;
+      document.getElementById('cardUrfiVal').textContent = `${Math.round(urfiSqm).toLocaleString('ar-EG')} م² (${feddanText(urfiSqm, qSize)})`;
+      document.getElementById('cardUrfiEq').textContent = `متوسط بحري/قبلي (${avgNS.toFixed(1)} م) × متوسط شرقي/غربي (${avgEW.toFixed(1)} م)`;
+
+      renderMap();
+    }
+
+    function closeCard() {
+      selectedId = null;
+      document.getElementById('mobileLandCard').classList.remove('active');
+      document.getElementById('tapHintPill').style.display = 'block';
+      renderMap();
+    }
+
+    function zoomToCurrentLand() {
+      const f = features.find(x => x.id === selectedId);
+      if (!f || !f.coords) return;
+      map.fitBounds(L.latLngBounds(f.coords), { padding: [60, 60], maxZoom: 19 });
+    }
+
+    function sendToCalc() {
+      const f = features.find(x => x.id === selectedId);
+      if (!f) return;
+      openDualCalcModal();
+    }
+
+    function toggleShapes() {
+      showShapes = !showShapes;
+      const btn = document.getElementById('btnToggleShapes');
+      const txt = document.getElementById('txtToggleShapes');
+      if (showShapes) {
+        btn.className = 'top-btn top-btn-green';
+        txt.textContent = '👁️ الخريطة: ظاهرة';
+      } else {
+        btn.className = 'top-btn top-btn-red';
+        txt.textContent = '👁️ الخريطة: مخفية';
+      }
+      renderMap();
+    }
+
+    map.on('click', () => {
+      if (selectedId !== null) closeCard();
+    });
+
+    // Modal Handlers
+    function openParcelsModal() {
+      document.getElementById('parcelsModalBackdrop').style.display = 'flex';
+      renderParcelsList();
+    }
+    function closeParcelsModal() {
+      document.getElementById('parcelsModalBackdrop').style.display = 'none';
+    }
+
+    function openDualCalcModal() {
+      document.getElementById('dualCalcBackdrop').style.display = 'flex';
+    }
+    function closeDualCalcModal() {
+      document.getElementById('dualCalcBackdrop').style.display = 'none';
+    }
+
+    function renderParcelsList() {
+      const scroll = document.getElementById('parcelsListScroll');
+      scroll.innerHTML = '';
+      const q = (document.getElementById('mobSearchInp').value || '').trim().toLowerCase();
+
+      const filtered = features.filter(f => {
+        if (!q) return true;
+        const name = (f.name || '').toLowerCase();
+        const owner = (f.owner || '').toLowerCase();
+        const id = String(f.id);
+        return name.includes(q) || owner.includes(q) || id.includes(q);
+      });
+
+      document.getElementById('topCnt').textContent = features.length;
+      document.getElementById('modalCnt').textContent = filtered.length;
+
+      filtered.forEach(f => {
+        const sqm = polygonAreaMeters(f.coords);
+        const qSize = f.qiratSqm || 175;
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        card.innerHTML = `
+          <div>
+            <strong style="color:#fff;font-size:14px">#${f.id} — ${f.owner || f.name || 'أرض زراعية'}</strong>
+            <div style="font-size:12px;color:#94a3b8;margin-top:2px">${feddanText(sqm, qSize)}</div>
+          </div>
+          <div style="text-align:left">
+            <span style="font-size:14px;font-weight:900;color:#facc15">${Math.round(sqm).toLocaleString('ar-EG')} م²</span>
+          </div>
+        `;
+        card.onclick = () => {
+          closeParcelsModal();
+          selectLand(f.id);
+          map.fitBounds(L.latLngBounds(f.coords), { padding: [60, 60], maxZoom: 19 });
+        };
+        scroll.appendChild(card);
+      });
+    }
+
+    // Boot: load latest server / sync data
+    async function boot() {
+      renderMap();
+      renderParcelsList();
+
+      try {
+        const r = await fetch('/api/teach?' + Date.now());
+        if (r.ok) {
+          const d = await r.json();
+          if (d.features && d.features.length) {
+            features = d.features;
+            renderMap();
+            renderParcelsList();
+          }
+        }
+      } catch (e) {}
+    }
+
+    boot();
+  </script>
+</body>
+</html>
