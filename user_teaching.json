@@ -1,5 +1,4 @@
 {
-  "pin": "MS@96",
   "pins": [
     [
       27.2607972,
@@ -23,7 +22,7 @@
     {
       "id": 1,
       "type": "parcel",
-      "name": "قطعة أرض 1",
+      "name": "enc:kdWT9+qJ6p9/i+ab5Irzfwg=",
       "note": "",
       "coords": [
         [
@@ -84,7 +83,7 @@
     {
       "id": 2,
       "type": "parcel",
-      "name": "قطعة أرض 2",
+      "name": "enc:kdWT9+qJ6p9/i+ab5Irzfws=",
       "note": "",
       "coords": [
         [
@@ -106,7 +105,7 @@
       ],
       "created": "2026-11-06T23:20:34.130Z",
       "qiratSqm": 175,
-      "owner": "قطعة أرض 2",
+      "owner": "enc:kdWT9+qJ6p9/i+ab5Irzfws=",
       "code": "HW-002",
       "basin": "",
       "status": "ملك خاص",
@@ -117,7 +116,7 @@
     {
       "id": 4,
       "type": "parcel",
-      "name": "قطعة أرض 4",
+      "name": "enc:kdWT9+qJ6p9/i+ab5Irzfw0=",
       "note": "",
       "coords": [
         [
@@ -143,7 +142,7 @@
     {
       "id": 5,
       "type": "road",
-      "name": "طريق / فاصل 1",
+      "name": "enc:kOCT8eu667R/fGWa1Irih4zvzHd6",
       "note": "",
       "coords": [
         [
@@ -460,7 +459,7 @@
     {
       "id": 6,
       "type": "drain",
-      "name": "مصرف / مسقى 1",
+      "name": "enc:kdKT9eqB67d/fGWa0Ir2hrvvwXd6",
       "note": "",
       "coords": [
         [
@@ -589,7 +588,7 @@
     {
       "id": 7,
       "type": "building",
-      "name": "مبنى / بيوت 1",
+      "name": "enc:kdKT6Ou2679/fGWb/YvPhrHu4nd6",
       "note": "",
       "coords": [
         [
@@ -622,7 +621,7 @@
     {
       "id": 9,
       "type": "building",
-      "name": "مبنى / بيوت 3",
+      "name": "enc:kdKT6Ou2679/fGWb/YvPhrHu4nd4",
       "note": "",
       "coords": [
         [
@@ -655,7 +654,7 @@
     {
       "id": 10,
       "type": "building",
-      "name": "مبنى / بيوت 4",
+      "name": "enc:kdKT6Ou2679/fGWb/YvPhrHu4nd/",
       "note": "",
       "coords": [
         [
@@ -688,7 +687,7 @@
     {
       "id": 12,
       "type": "parcel",
-      "name": "قطعة أرض 6",
+      "name": "enc:kdWT9+qJ6p9/i+ab5Irzfw8=",
       "note": "",
       "coords": [
         [
@@ -717,7 +716,7 @@
     {
       "id": 13,
       "type": "parcel",
-      "name": "قطعة أرض 7",
+      "name": "enc:kdWT9+qJ6p9/i+ab5Irzfw4=",
       "note": "",
       "coords": [
         [
@@ -759,7 +758,7 @@
     {
       "id": 14,
       "type": "parcel",
-      "name": "قطعة أرض 8",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwE=",
       "note": "",
       "coords": [
         [
@@ -785,7 +784,7 @@
     {
       "id": 15,
       "type": "parcel",
-      "name": "قطعة أرض 9",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwA=",
       "note": "",
       "coords": [
         [
@@ -810,7 +809,7 @@
     {
       "id": 16,
       "type": "canal",
-      "name": "ترعة / مجرى ماء 1",
+      "name": "enc:kP2T8eqJ6p9/fGWa0Irph4jvwXeSxeqX6pd/Yg==",
       "note": "",
       "coords": [
         [
@@ -867,7 +866,7 @@
     {
       "id": 17,
       "type": "canal",
-      "name": "ترعة / مجرى ماء 2",
+      "name": "enc:kP2T8eqJ6p9/fGWa0Irph4jvwXeSxeqX6pd/YQ==",
       "note": "",
       "coords": [
         [
@@ -1024,7 +1023,7 @@
     {
       "id": 18,
       "type": "canal",
-      "name": "ترعة / مجرى ماء 3",
+      "name": "enc:kP2T8eqJ6p9/fGWa0Irph4jvwXeSxeqX6pd/YA==",
       "note": "",
       "coords": [
         [
@@ -1201,7 +1200,7 @@
     {
       "id": 19,
       "type": "drain",
-      "name": "مصرف / مسقى 2",
+      "name": "enc:kdKT9eqB67d/fGWa0Ir2hrvvwXd5",
       "note": "",
       "coords": [
         [
@@ -1290,7 +1289,7 @@
     {
       "id": 20,
       "type": "drain",
-      "name": "مصرف / مسقى 3",
+      "name": "enc:kdKT9eqB67d/fGWa0Ir2hrvvwXd4",
       "note": "",
       "coords": [
         [
@@ -1339,7 +1338,7 @@
     {
       "id": 21,
       "type": "parcel",
-      "name": "قطعة أرض 10",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwgG",
       "note": "",
       "coords": [
         [
@@ -1370,7 +1369,7 @@
     {
       "id": 22,
       "type": "drain",
-      "name": "مصرف / مسقى 4",
+      "name": "enc:kdKT9eqB67d/fGWa0Ir2hrvvwXd/",
       "note": "",
       "coords": [
         [
@@ -1483,7 +1482,7 @@
     {
       "id": 23,
       "type": "parcel",
-      "name": "قطعة أرض 11",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwgH",
       "note": "",
       "coords": [
         [
@@ -1509,7 +1508,7 @@
       ],
       "created": "2026-11-06T23:51:52.664Z",
       "qiratSqm": 175,
-      "owner": "قطعة أرض 11",
+      "owner": "enc:kdWT9+qJ6p9/i+ab5IrzfwgH",
       "code": "HW-023",
       "basin": "",
       "status": "ملك خاص",
@@ -1519,7 +1518,7 @@
     {
       "id": 24,
       "type": "parcel",
-      "name": "قطعة أرض 12",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwgE",
       "note": "",
       "coords": [
         [
@@ -1552,7 +1551,7 @@
     {
       "id": 25,
       "type": "parcel",
-      "name": "قطعة أرض 13",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwgF",
       "note": "",
       "coords": [
         [
@@ -1577,7 +1576,7 @@
     {
       "id": 26,
       "type": "parcel",
-      "name": "قطعة أرض 14",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwgC",
       "note": "",
       "coords": [
         [
@@ -1615,7 +1614,7 @@
     {
       "id": 27,
       "type": "parcel",
-      "name": "قطعة أرض 15",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwgD",
       "note": "",
       "coords": [
         [
@@ -1640,7 +1639,7 @@
     {
       "id": 28,
       "type": "drain",
-      "name": "مصرف / مسقى 5",
+      "name": "enc:kdKT9eqB67d/fGWa0Ir2hrvvwXd+",
       "note": "",
       "coords": [
         [
@@ -1733,7 +1732,7 @@
     {
       "id": 29,
       "type": "drain",
-      "name": "مصرف / مسقى 6",
+      "name": "enc:kdKT9eqB67d/fGWa0Ir2hrvvwXd9",
       "note": "",
       "coords": [
         [
@@ -1770,7 +1769,7 @@
     {
       "id": 30,
       "type": "parcel",
-      "name": "قطعة أرض 16",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwgA",
       "note": "",
       "coords": [
         [
@@ -1816,7 +1815,7 @@
     {
       "id": 31,
       "type": "parcel",
-      "name": "قطعة أرض 17",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwgB",
       "note": "",
       "coords": [
         [
@@ -1845,7 +1844,7 @@
     {
       "id": 32,
       "type": "parcel",
-      "name": "قطعة أرض 18",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwgO",
       "note": "",
       "coords": [
         [
@@ -1870,7 +1869,7 @@
     {
       "id": 33,
       "type": "parcel",
-      "name": "قطعة أرض 19",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwgP",
       "note": "",
       "coords": [
         [
@@ -1903,7 +1902,7 @@
     {
       "id": 34,
       "type": "parcel",
-      "name": "قطعة أرض 20",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwsG",
       "note": "",
       "coords": [
         [
@@ -1928,7 +1927,7 @@
     {
       "id": 35,
       "type": "parcel",
-      "name": "قطعة أرض 21",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwsH",
       "note": "",
       "coords": [
         [
@@ -1957,7 +1956,7 @@
     {
       "id": 36,
       "type": "parcel",
-      "name": "قطعة أرض 22",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwsE",
       "note": "",
       "coords": [
         [
@@ -1998,7 +1997,7 @@
     {
       "id": 37,
       "type": "parcel",
-      "name": "قطعة أرض 23",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwsF",
       "note": "",
       "coords": [
         [
@@ -2043,7 +2042,7 @@
     {
       "id": 38,
       "type": "parcel",
-      "name": "قطعة أرض 24",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwsC",
       "note": "",
       "coords": [
         [
@@ -2073,7 +2072,7 @@
       ],
       "created": "2026-11-06T23:59:05.485Z",
       "qiratSqm": 175,
-      "owner": "قطعة أرض 24",
+      "owner": "enc:kdWT9+qJ6p9/i+ab5IrzfwsC",
       "code": "HW-038",
       "basin": "",
       "status": "ملك خاص",
@@ -2083,7 +2082,7 @@
     {
       "id": 39,
       "type": "parcel",
-      "name": "قطعة أرض 25",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwsD",
       "note": "",
       "coords": [
         [
@@ -2116,7 +2115,7 @@
     {
       "id": 40,
       "type": "parcel",
-      "name": "قطعة أرض 26",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwsA",
       "note": "",
       "coords": [
         [
@@ -2145,7 +2144,7 @@
     {
       "id": 41,
       "type": "parcel",
-      "name": "قطعة أرض 27",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwsB",
       "note": "",
       "coords": [
         [
@@ -2179,7 +2178,7 @@
     {
       "id": 42,
       "type": "parcel",
-      "name": "قطعة أرض 28",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwsO",
       "note": "",
       "coords": [
         [
@@ -2204,7 +2203,7 @@
     {
       "id": 44,
       "type": "parcel",
-      "name": "قطعة أرض 30",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwoG",
       "note": "",
       "coords": [
         [
@@ -2226,7 +2225,7 @@
       ],
       "created": "2026-11-07T10:39:34.474Z",
       "qiratSqm": 171.35,
-      "owner": "قطعة أرض 30",
+      "owner": "enc:kdWT9+qJ6p9/i+ab5IrzfwoG",
       "code": "HW-044",
       "basin": "",
       "status": "ملك خاص",
@@ -2236,7 +2235,7 @@
     {
       "id": 45,
       "type": "parcel",
-      "name": "سلطان عبد العظيم",
+      "name": "enc:kOSSxOqH6pGG1WWb7Irth5YWkPCSxOqJ6o6G2ZzG",
       "note": "",
       "coords": [
         [
@@ -2258,7 +2257,7 @@
       ],
       "created": "2026-11-07T10:39:46.038Z",
       "qiratSqm": 175,
-      "owner": "سلطان عبد العظيم",
+      "owner": "enc:kOSSxOqH6pGG1WWb7Irth5YWkPCSxOqJ6o6G2ZzG",
       "code": "HW-045",
       "basin": "",
       "status": "ملك خاص",
@@ -2269,7 +2268,7 @@
     {
       "id": 46,
       "type": "parcel",
-      "name": "قطعة أرض 31",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwoH",
       "note": "",
       "coords": [
         [
@@ -2367,8 +2366,8 @@
     {
       "id": 47,
       "type": "parcel",
-      "name": "قطعة أرض 32",
-      "owner": "قطعة أرض 32",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwoE",
+      "owner": "enc:kdWT9+qJ6p9/i+ab5IrzfwoE",
       "code": "HW-047",
       "qiratSqm": 175,
       "areaMethod": "geo",
@@ -2401,8 +2400,8 @@
     {
       "id": 48,
       "type": "parcel",
-      "name": "سلطان عبد العظيم",
-      "owner": "سلطان عبد العظيم",
+      "name": "enc:kOSSxOqH6pGG1WWb7Irth5YWkPCSxOqJ6o6G2ZzG",
+      "owner": "enc:kOSSxOqH6pGG1WWb7Irth5YWkPCSxOqJ6o6G2ZzG",
       "code": "HW-048",
       "qiratSqm": 175,
       "areaMethod": "geo",
@@ -2435,8 +2434,8 @@
     {
       "id": 49,
       "type": "parcel",
-      "name": "سلطان عبد العظيم",
-      "owner": "سلطان عبد العظيم",
+      "name": "enc:kOSSxOqH6pGG1WWb7Irth5YWkPCSxOqJ6o6G2ZzG",
+      "owner": "enc:kOSSxOqH6pGG1WWb7Irth5YWkPCSxOqJ6o6G2ZzG",
       "code": "HW-049",
       "qiratSqm": 175,
       "areaMethod": "geo",
@@ -2477,7 +2476,7 @@
     {
       "id": 50,
       "type": "parcel",
-      "name": "قطعة أرض 34",
+      "name": "enc:kdWT9+qJ6p9/i+ab5IrzfwoC",
       "owner": "",
       "code": "HW-050",
       "qiratSqm": 175,
