@@ -1356,6 +1356,11 @@
       </div>
 
       <a href="mobile.html" class="btn" style="width:100%;margin-top:6px;justify-content:center;background:linear-gradient(135deg, rgba(14, 165, 233, 0.35), rgba(3, 105, 161, 0.5));border-color:#38bdf8;color:#7dd3fc;font-size:12px;padding:6px 10px;text-decoration:none;">📱 فتح واجهة الموبايل الذكية</a>
+      
+      <button class="btn btn-red" style="width:100%;margin-top:8px;justify-content:center;font-size:12px;padding:6px" onclick="clearAllSurveyParcels()">
+        🗑️ مسح كل الأشكال وتفريغ الصفحة
+      </button>
+
       <!-- Quadrilateral Area Calculator Button -->
       <button class="btn" style="width:100%;margin-top:8px;justify-content:center;background:linear-gradient(135deg, rgba(59,130,246,0.25), rgba(30,58,138,0.45));border-color:#3b82f6;color:#93c5fd;font-size:12.5px;padding:7px 10px" onclick="openQuadCalcModal()">
         🧮 حاسبة مساحة الشكل الرباعي
@@ -1872,6 +1877,23 @@
       }
     };
 
+    
+    window.clearAllSurveyParcels = function() {
+      requireEditUnlock(() => {
+        if (!confirm('هل أنت متأكد من مسح جميع الأشكال والقطع من هذه الصفحة نهائياً؟')) return;
+        features = [];
+        selected = null;
+        selectedIds = [];
+        selectedVertexIndices = [];
+        localStorage.removeItem('SURVEY_CUSTOM_CLEAN_V3');
+        renderAll();
+        renderEditHandles();
+        updateInspectorCard();
+        save();
+        setStatus('🗑️ تم تفريغ صفحة الرفع المساحي بالكامل.');
+      });
+    };
+
     window.copySinglePointCoord = function(lat, lng, pNum) {
       const text = `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`;
       navigator.clipboard.writeText(text).then(() => {
@@ -2005,7 +2027,20 @@
       });
     }
 
-    let features = decryptFeatures([...SEEDED_FEATURES]);
+    
+    // Force completely clean slate on startup (wipes old parcels if cached in localStorage)
+    try {
+      if (!localStorage.getItem('SURVEY_IS_CLEAN_SLATE_V5')) {
+        localStorage.removeItem('SURVEY_CUSTOM_CLEAN_V3');
+        localStorage.removeItem('SURVEY_PARCELS_DATA_V1');
+        localStorage.removeItem('HAWATKA_TEACH_V1');
+        localStorage.setItem('SURVEY_IS_CLEAN_SLATE_V5', 'true');
+      }
+    } catch(e) {}
+
+    window.features = [];
+    var features = [];
+    window.features = features;
     let mode = 'select';     // 'select' or 'add'
     let addType = 'parcel';  // active type when in 'add' mode
     let pts = [];            // points of shape currently being drawn
@@ -3628,7 +3663,7 @@
 
     function save() {
       if (!editUnlocked) return;
-      localStorage.setItem('SURVEY_PARCELS_DATA_V1', JSON.stringify(features));
+      localStorage.setItem('SURVEY_CUSTOM_CLEAN_V3', JSON.stringify(features));
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => {
         const payloadStr = JSON.stringify({ pin: EDIT_PIN, pins: PINS, savedAt: new Date().toISOString(), features });
@@ -3703,71 +3738,39 @@
       document.getElementById('status').innerHTML = h;
     }
 
-    async function boot() {
+        async function boot() {
       updateLockUI();
       updateMobileInspectorState();
-      // Ensure features has seeded data if empty
-      if (!features || !features.length) {
-        features = [...SEEDED_FEATURES];
-      }
-      // 1. Try local/Netlify server API first
+      
+      // Start completely EMPTY — Never load user_teaching.json or old parcels!
       try {
-        const rApi = await fetch('/api/teach?' + Date.now());
-        if (rApi.ok) {
-          const dApi = await rApi.json();
-          if (dApi.features && dApi.features.length) {
-            features = decryptFeatures(dApi.features);
-            localStorage.setItem('SURVEY_PARCELS_DATA_V1', JSON.stringify(features));
-          }
-        }
-      } catch (e) {}
+        features = JSON.parse(localStorage.getItem('SURVEY_CUSTOM_CLEAN_V3') || '[]');
+      } catch (e) {
+        features = [];
+      }
 
-      // 2. Try live Cloud Sync Channel (for static cloud deployments across devices)
-      if (!features.length) {
-        try {
-          const rCloud = await fetch(`https://ntfy.sh/${CLOUD_SYNC_TOPIC}/json?poll=1&since=all`);
-          if (rCloud.ok) {
-            const text = await rCloud.text();
-            const lines = text.trim().split('\n').filter(Boolean);
-            for (let i = lines.length - 1; i >= 0; i--) {
-              const msg = JSON.parse(lines[i]);
-              if (msg.attachment && msg.attachment.url) {
-                const rAtt = await fetch(msg.attachment.url);
-                if (rAtt.ok) {
-                  const dAtt = await rAtt.json();
-                  if (dAtt.features && dAtt.features.length) {
-                    features = dAtt.features;
-                    localStorage.setItem('SURVEY_PARCELS_DATA_V1', JSON.stringify(features));
-                    break;
-                  }
+      // Check only dedicated new survey cloud channel
+      try {
+        const rCloud = await fetch(`https://ntfy.sh/${CLOUD_SYNC_TOPIC}/json?poll=1&since=all`);
+        if (rCloud.ok) {
+          const text = await rCloud.text();
+          const lines = text.trim().split(String.fromCharCode(10)).filter(Boolean);
+          for (let i = lines.length - 1; i >= 0; i--) {
+            const msg = JSON.parse(lines[i]);
+            if (msg.attachment && msg.attachment.url) {
+              const rAtt = await fetch(msg.attachment.url);
+              if (rAtt.ok) {
+                const dAtt = await rAtt.json();
+                if (dAtt.features) {
+                  features = dAtt.features;
+                  localStorage.setItem('SURVEY_CUSTOM_CLEAN_V3', JSON.stringify(features));
+                  break;
                 }
               }
             }
           }
-        } catch (e) {}
-      }
-
-      // 3. Fallback to static user_teaching.json (initial seed on first deploy)
-      if (!features.length) {
-        try {
-          const r = await fetch('user_teaching.json?' + Date.now());
-          if (r.ok) {
-            const d = await r.json();
-            if (d.features && d.features.length) {
-              features = decryptFeatures(d.features);
-              localStorage.setItem('SURVEY_PARCELS_DATA_V1', JSON.stringify(features));
-            }
-          }
-        } catch (e) {}
-      }
-
-      if (!features.length) {
-        try {
-          features = JSON.parse(localStorage.getItem('SURVEY_PARCELS_DATA_V1') || '[]');
-        } catch (e) {
-          features = [];
         }
-      }
+      } catch (e) {}
 
       renderAll();
       updateInspectorCard();
