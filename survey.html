@@ -1,0 +1,3884 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>بوابة مكانية — الرفع المساحي ونقاط الإحداثيات (صفحة جديدة)</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --bg-panel: rgba(15, 23, 42, 0.94);
+      --bg-card: rgba(30, 41, 59, 0.9);
+      --border: rgba(148, 163, 184, 0.24);
+      --emerald: #10b981;
+      --gold: #facc15;
+      --danger: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-main);
+      overflow: hidden;
+      user-select: none;
+    }
+
+    #map {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    /* ================= RIGHT PANEL (Mode, Add Tools & View Options) ================= */
+    .right-panel {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 310px;
+      max-height: calc(100vh - 20px);
+      z-index: 1000;
+      background: var(--bg-panel);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+    }
+
+    .right-panel::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .right-panel::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.35);
+      border-radius: 4px;
+    }
+
+    .right-panel::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.6);
+    }
+
+    .panel-header {
+      padding: 11px 14px;
+      background: linear-gradient(135deg, #065f46, #0f172a);
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    /* Mode Switch Buttons (Select vs Add) */
+    .mode-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .mode-btn {
+      padding: 11px 8px;
+      border-radius: 10px;
+      border: 2px solid #334155;
+      background: #1e293b;
+      color: #cbd5e1;
+      font-size: 13.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .mode-btn:hover {
+      background: #334155;
+      color: #fff;
+    }
+
+    .mode-btn.active-select {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border-color: #93c5fd;
+      color: #fff;
+      box-shadow: 0 0 14px rgba(59, 130, 246, 0.55);
+    }
+
+    .mode-btn.active-add {
+      background: linear-gradient(135deg, #059669, #047857);
+      border-color: #6ee7b7;
+      color: #fff;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.55);
+    }
+
+    /* Shape Type Grid */
+    .tools {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .tool {
+      padding: 8px 6px;
+      border-radius: 9px;
+      border: 2px solid #334155;
+      background: #1e293b;
+      color: #fff;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.12s ease;
+    }
+
+    .tool:hover {
+      background: #334155;
+    }
+
+    .tool.active {
+      border-color: var(--gold);
+      background: rgba(250, 204, 21, 0.14);
+      box-shadow: 0 0 10px rgba(250, 204, 21, 0.4);
+    }
+
+    .tool .sw {
+      display: inline-block;
+      width: 11px;
+      height: 11px;
+      border-radius: 3px;
+      margin-left: 5px;
+      vertical-align: middle;
+    }
+
+    .draw-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .btn {
+      padding: 7px 10px;
+      border-radius: 8px;
+      border: 1px solid #475569;
+      background: #1e293b;
+      color: #fff;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover { background: #334155; }
+    .btn-green { background: #059669; border-color: #10b981; }
+    .btn-green:hover { background: #10b981; }
+    .btn-blue { background: #2563eb; border-color: #60a5fa; }
+    .btn-red { background: rgba(185, 28, 28, 0.85); border-color: #ef4444; }
+    .btn-red:hover { background: #dc2626; }
+
+    .row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    label.chk {
+      font-size: 12px;
+      display: flex;
+      gap: 7px;
+      align-items: center;
+      cursor: pointer;
+      margin-top: 6px;
+      color: #e2e8f0;
+    }
+
+    .help {
+      font-size: 11.5px;
+      line-height: 1.65;
+      color: #cbd5e1;
+    }
+
+    .help kbd {
+      background: #334155;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 10.5px;
+      color: var(--gold);
+    }
+
+    /* ================= LEFT PANEL (Top: Drawn Shapes List | Bottom: Parcel Card) ================= */
+    .left-sidebar {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      bottom: 10px;
+      width: 395px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .left-box {
+      pointer-events: auto;
+      background: var(--bg-panel);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+    }
+
+    /* Top Left Box: Drawn Shapes List */
+    .list-box {
+      flex: 0 0 42%;
+      min-height: 210px;
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 6px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.6);
+    }
+
+    .filter-bar input, .filter-bar select {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 7px;
+      color: #fff;
+      padding: 6px 8px;
+      font-size: 12px;
+      outline: none;
+    }
+
+    .filter-bar input { flex: 1; }
+    .filter-bar input:focus, .filter-bar select:focus { border-color: var(--emerald); }
+
+    .list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .list, .card-body {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+    }
+    .list::-webkit-scrollbar, .card-body::-webkit-scrollbar { width: 6px; }
+    .list::-webkit-scrollbar-thumb, .card-body::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.35);
+      border-radius: 4px;
+    }
+    .list::-webkit-scrollbar-thumb:hover, .card-body::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.6);
+    }
+
+    .item {
+      background: var(--bg-card);
+      border: 1px solid #334155;
+      border-right: 5px solid var(--emerald);
+      border-radius: 9px;
+      padding: 8px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.14s ease;
+    }
+
+    .item:hover {
+      background: #334155;
+    }
+
+    .item.sel {
+      border-color: var(--gold);
+      background: rgba(250, 204, 21, 0.12);
+      box-shadow: 0 0 10px rgba(250, 204, 21, 0.25);
+    }
+
+    .item-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 800;
+      font-size: 12.5px;
+    }
+
+    .item-sub {
+      display: flex;
+      justify-content: space-between;
+      color: #94a3b8;
+      margin-top: 4px;
+      font-size: 11.5px;
+    }
+
+    /* Bottom Left Box: Parcel Inspector & Editor Card */
+    .card-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .area-banner {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(30, 41, 59, 0.9));
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      border-radius: 10px;
+      padding: 8px 11px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .area-banner .faddan {
+      font-size: 14px;
+      font-weight: 800;
+      color: #34d399;
+    }
+
+    .area-banner .sqm {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    .qirat-calc-box {
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid rgba(250, 204, 21, 0.35);
+      border-radius: 9px;
+      padding: 7px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .qirat-calc-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .qirat-calc-top label {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #facc15;
+    }
+
+    .qirat-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .qirat-input-wrap input {
+      width: 72px;
+      background: #1e293b;
+      border: 1.5px solid #facc15;
+      border-radius: 6px;
+      color: #fff;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 3px 6px;
+      text-align: center;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .qirat-presets {
+      display: flex;
+      gap: 4px;
+    }
+
+    .qirat-preset-btn {
+      background: #1e293b;
+      border: 1px solid #475569;
+      color: #cbd5e1;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .qirat-preset-btn:hover, .qirat-preset-btn.active {
+      background: rgba(250, 204, 21, 0.2);
+      border-color: #facc15;
+      color: #facc15;
+    }
+
+    .qirat-equation {
+      font-size: 11px;
+      color: #cbd5e1;
+      background: rgba(30, 41, 59, 0.75);
+      padding: 4px 8px;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .dims-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+    }
+
+    .dim-cell {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid #334155;
+      border-radius: 7px;
+      padding: 5px 4px;
+      text-align: center;
+    }
+
+    .dim-cell span {
+      display: block;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .dim-cell strong {
+      font-size: 11.5px;
+      color: #e2e8f0;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .form-group.full {
+      grid-column: 1 / -1;
+    }
+
+    .form-group label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+
+    .form-group input, .form-group select, .form-group textarea {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 7px;
+      color: #fff;
+      padding: 6px 8px;
+      font-size: 12px;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: var(--gold);
+    }
+
+    .swatches {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      margin-top: 2px;
+    }
+
+    .swatch {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.12s ease;
+    }
+
+    .swatch.active {
+      border-color: #fff;
+      transform: scale(1.15);
+      box-shadow: 0 0 8px rgba(255,255,255,0.6);
+    }
+
+    .card-footer {
+      padding: 9px 12px;
+      border-top: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.85);
+      display: flex;
+      gap: 6px;
+    }
+
+    /* ================= STATUS BAR & MAP MARKERS ================= */
+    .status {
+      position: absolute;
+      bottom: 10px;
+      left: 415px;
+      right: 330px;
+      z-index: 1000;
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 12.5px;
+      text-align: center;
+      pointer-events: none;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.45);
+    }
+
+    .saved { color: #34d399; font-weight: 800; }
+
+    /* Subtle Vertex Dots on All Shapes (for easy tracing & snapping!) */
+    .pt-guide {
+      width: 7px !important;
+      height: 7px !important;
+      margin: -3.5px 0 0 -3.5px !important;
+      background: #ffffff;
+      border: 1.5px solid #0f172a;
+      border-radius: 50%;
+      box-shadow: 0 0 4px rgba(0,0,0,0.8);
+      pointer-events: none;
+    }
+
+    /* Highlighted Snap Indicator when cursor approaches a vertex or edge */
+    .snap-ring {
+      width: 16px !important;
+      height: 16px !important;
+      margin: -8px 0 0 -8px !important;
+      background: rgba(250, 204, 21, 0.35);
+      border: 2.5px solid #facc15;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #facc15;
+      pointer-events: none;
+    }
+
+    /* Draggable Vertex Handles on Selected Shape */
+    .vh {
+      width: 13px !important;
+      height: 13px !important;
+      margin: -6.5px 0 0 -6.5px !important;
+      background: #f97316;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      cursor: grab;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+    }
+
+    .vh-first {
+      background: #facc15;
+      width: 16px !important;
+      height: 16px !important;
+      margin: -8px 0 0 -8px !important;
+      cursor: pointer;
+    }
+
+    /* Midpoint Handle to Add a New Vertex on an Existing Edge */
+    .vh-mid {
+      width: 9px !important;
+      height: 9px !important;
+      margin: -4.5px 0 0 -4.5px !important;
+      background: rgba(56, 189, 248, 0.9);
+      border: 1.5px solid #fff;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .lbl-anchor {
+      position: relative;
+      width: 0;
+      height: 0;
+      direction: ltr;
+      pointer-events: none;
+    }
+
+    .lbl {
+      position: absolute;
+      left: 0;
+      top: 0;
+      transform: translate(-50%, -50%);
+      direction: rtl;
+      text-align: center;
+      width: max-content;
+      background: rgba(15, 23, 42, 0.86);
+      border: 1px solid rgba(255,255,255,0.28);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.55);
+      color: #fff;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 4px 9px;
+      border-radius: 7px;
+      white-space: nowrap;
+      line-height: 1.35;
+    }
+
+    .lbl .lbl-name {
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 11.5px;
+    }
+
+    .lbl .lbl-sqm {
+      color: #facc15;
+      font-weight: 800;
+      font-size: 11.5px;
+      margin-top: 1px;
+    }
+
+    .lbl .lbl-fed {
+      color: #6ee7b7;
+      font-weight: 700;
+      font-size: 10.5px;
+      margin-top: 1px;
+    }
+
+    .dim-lbl {
+      position: absolute;
+      left: 0;
+      top: 0;
+      transform: translate(-50%, -145%);
+      direction: rtl;
+      text-align: center;
+      width: max-content;
+      background: rgba(250, 204, 21, 0.96);
+      color: #0f172a;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 5px;
+      white-space: nowrap;
+      border: 1.5px solid #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.45);
+    }
+
+    /* Multi-select Chips & Combined Card */
+    .multi-chips-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid #334155;
+      border-radius: 9px;
+      padding: 8px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .multi-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(30, 41, 59, 0.95);
+      border: 1px solid rgba(250, 204, 21, 0.45);
+      border-radius: 7px;
+      padding: 4px 8px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    .multi-chip .chip-area {
+      color: #34d399;
+      font-size: 10.5px;
+      font-weight: 800;
+    }
+
+    .multi-chip .chip-remove {
+      cursor: pointer;
+      color: #f87171;
+      font-size: 12px;
+      font-weight: 900;
+      padding: 0 2px;
+    }
+
+    .multi-table {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      max-height: 170px;
+      overflow-y: auto;
+    }
+
+    .multi-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.78);
+      border: 1px solid #1e293b;
+      border-right: 3px solid #22c55e;
+      border-radius: 7px;
+      padding: 6px 9px;
+      font-size: 11.5px;
+      cursor: pointer;
+    }
+
+    .multi-row:hover {
+      background: rgba(30, 41, 59, 0.95);
+    }
+
+    /* Password / Lock Banner & Modal */
+    .lock-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 11px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .lock-banner.locked {
+      background: rgba(239, 68, 68, 0.16);
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      color: #fca5a5;
+    }
+
+    .lock-banner.unlocked {
+      background: rgba(16, 185, 129, 0.16);
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      color: #6ee7b7;
+    }
+
+    .pin-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(2, 6, 23, 0.78);
+      backdrop-filter: blur(5px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pin-modal {
+      background: #0f172a;
+      border: 1.5px solid #facc15;
+      border-radius: 14px;
+      padding: 20px 22px;
+      width: 330px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.85);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .pin-modal h3 {
+      font-size: 15px;
+      font-weight: 800;
+      color: #facc15;
+    }
+
+    .pin-modal p {
+      font-size: 12px;
+      color: #cbd5e1;
+      line-height: 1.6;
+    }
+
+    .pin-input {
+      background: #1e293b;
+      border: 2px solid #475569;
+      border-radius: 9px;
+      color: #fff;
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 10px;
+      text-align: center;
+      padding: 8px 12px;
+      width: 100%;
+      outline: none;
+      font-family: monospace;
+    }
+
+    .pin-input:focus {
+      border-color: #facc15;
+    }
+
+    .pin-error {
+      color: #f87171;
+      font-size: 11.5px;
+      font-weight: 700;
+      min-height: 16px;
+    }
+
+    /* Selected Vertex Handle (Red highlight for deleting with Backspace) */
+    .vh-selected {
+      background: #ef4444 !important;
+      border: 2.5px solid #fef08a !important;
+      width: 17px !important;
+      height: 17px !important;
+      margin: -8.5px 0 0 -8.5px !important;
+      box-shadow: 0 0 12px #ef4444;
+      z-index: 950 !important;
+    }
+
+    /* Quadrilateral & Dual Calculator Modal */
+    .quad-modal {
+      background: #0f172a;
+      border: 1.5px solid #3b82f6;
+      border-radius: 18px;
+      padding: 18px 20px;
+      width: 1120px;
+      max-width: 96vw;
+      max-height: 94vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.88);
+      color: #f8fafc;
+      direction: rtl;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+    }
+
+    .quad-modal::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .quad-modal::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.35);
+      border-radius: 4px;
+    }
+
+    .quad-modal::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.6);
+    }
+
+    .quad-dual-layout {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    @media (max-width: 940px) {
+      .quad-dual-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .quad-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      padding-bottom: 12px;
+      margin-bottom: 14px;
+      gap: 10px;
+    }
+
+    .quad-grid {
+      display: grid;
+      grid-template-columns: 7fr 5fr;
+      gap: 12px;
+      align-items: center;
+    }
+
+    @media (max-width: 640px) {
+      .quad-grid { grid-template-columns: 1fr; }
+    }
+
+    .quad-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .quad-input-box label {
+      display: block;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #cbd5e1;
+      margin-bottom: 3px;
+    }
+
+    .quad-input-box input {
+      width: 100%;
+      background: #090d16;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 6px 10px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      outline: none;
+    }
+
+    .quad-input-box input:focus {
+      border-color: #3b82f6;
+    }
+
+    .quad-stat-box {
+      background: #090d16;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 10px;
+      padding: 8px 10px;
+      text-align: center;
+    }
+
+    .quad-send-btn {
+      margin-top: 5px;
+      background: rgba(16, 185, 129, 0.16);
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      color: #6ee7b7;
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 10.5px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .quad-send-btn:hover {
+      background: #10b981;
+      color: #042f2e;
+    }
+
+    .quad-fks-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      text-align: center;
+    }
+
+    .quad-fks-card {
+      background: #1e293b;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 8px;
+      padding: 6px 8px;
+    }
+
+    /* Standard Calculator Column inside Portal Modal */
+    .std-calc-card {
+      background: #0b1120;
+      border: 1.5px solid rgba(16, 185, 129, 0.45);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    .modal-std-screen {
+      background: #090d16;
+      border: 1.5px solid #334155;
+      border-radius: 10px;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      text-align: left;
+      direction: ltr;
+      min-height: 70px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: inset 0 3px 6px rgba(0,0,0,0.6);
+    }
+
+    .modal-std-expr {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      min-height: 16px;
+      word-break: break-all;
+      font-family: monospace;
+    }
+
+    .modal-std-val {
+      font-size: 24px;
+      font-weight: 900;
+      color: #38bdf8;
+      word-break: break-all;
+      line-height: 1.15;
+    }
+
+    .modal-std-fks-bar {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.32);
+      border-radius: 8px;
+      padding: 5px 8px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+    }
+
+    .modal-std-keypad {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      direction: ltr;
+    }
+
+    .modal-std-key {
+      background: #1e293b;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 8px;
+      color: #f8fafc;
+      font-size: 15.5px;
+      font-weight: 800;
+      padding: 8px 0;
+      cursor: pointer;
+      transition: all 0.12s;
+      user-select: none;
+    }
+
+    .modal-std-key:hover {
+      background: #334155;
+      border-color: #60a5fa;
+      transform: translateY(-1px);
+    }
+
+    .modal-std-key:active {
+      transform: translateY(0);
+    }
+
+    .modal-std-key.op {
+      background: rgba(59, 130, 246, 0.2);
+      color: #93c5fd;
+      border-color: rgba(59, 130, 246, 0.4);
+    }
+
+    .modal-std-key.op:hover {
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .modal-std-key.clr {
+      background: rgba(239, 68, 68, 0.18);
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.35);
+    }
+
+    .modal-std-key.clr:hover {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .modal-std-key.eq {
+      background: linear-gradient(135deg, var(--emerald), #059669);
+      color: #042f2e;
+      border: none;
+      grid-column: span 2;
+    }
+
+    .modal-std-key.eq:hover {
+      filter: brightness(1.1);
+    }
+  
+    
+    
+    
+    /* Sleek Close Button Styling */
+    .mobile-panel-close {
+      background: rgba(255, 255, 255, 0.12) !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
+      color: #f1f5f9 !important;
+      width: 28px !important;
+      height: 28px !important;
+      border-radius: 8px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-size: 14px !important;
+      font-weight: 700 !important;
+      cursor: pointer !important;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      line-height: 1 !important;
+      padding: 0 !important;
+      user-select: none !important;
+    }
+    .mobile-panel-close:hover {
+      background: rgba(239, 68, 68, 0.9) !important;
+      border-color: #ef4444 !important;
+      color: #ffffff !important;
+      transform: scale(1.08) !important;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.5) !important;
+    }
+
+    /* Floating Docked Buttons for Minimized Panels */
+    .dock-container {
+      position: fixed;
+      pointer-events: none;
+      z-index: 1200;
+      inset: 0;
+    }
+    .floating-dock-btn {
+      position: absolute;
+      pointer-events: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(30, 41, 59, 0.96));
+      border: 1.5px solid rgba(16, 185, 129, 0.6);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 14px rgba(16, 185, 129, 0.3);
+      backdrop-filter: blur(14px);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 9px 16px;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+      animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.7); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .floating-dock-btn:hover {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.4), rgba(15, 23, 42, 0.98));
+      border-color: #34d399;
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(52, 211, 153, 0.5);
+    }
+    .floating-dock-btn.dock-right {
+      top: 14px;
+      right: 14px;
+    }
+    .floating-dock-btn.dock-left-top {
+      top: 14px;
+      left: 14px;
+    }
+    .floating-dock-btn.dock-left-bottom {
+      bottom: 24px;
+      left: 14px;
+    }
+    .floating-dock-btn.dock-survey-link {
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-color: rgba(56, 189, 248, 0.6);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 14px rgba(56, 189, 248, 0.3);
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(14, 116, 144, 0.9));
+    }
+    .floating-dock-btn.dock-survey-link:hover {
+      border-color: #38bdf8;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.4), rgba(15, 23, 42, 0.98));
+      transform: translateX(-50%) translateY(-2px) scale(1.04);
+    }
+
+    
+    /* Vertex Coordinates Callout Badges on the Map */
+    .lbl-anchor {
+      position: relative;
+    }
+    .vertex-coord-tag {
+      position: absolute;
+      transform: translate(-50%, -100%) translateY(-14px);
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.96));
+      border: 1.5px solid #38bdf8;
+      border-radius: 8px;
+      padding: 5px 9px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.65), 0 0 10px rgba(56, 189, 248, 0.35);
+      color: #f8fafc;
+      font-size: 11.5px;
+      font-weight: 600;
+      white-space: nowrap;
+      pointer-events: auto;
+      user-select: text;
+      z-index: 1050;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .vertex-coord-tag:hover {
+      transform: translate(-50%, -100%) translateY(-16px) scale(1.06);
+      border-color: #facc15;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75), 0 0 14px rgba(250, 204, 21, 0.5);
+    }
+    .vertex-coord-tag::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 6px 6px 0;
+      border-style: solid;
+      border-color: #38bdf8 transparent transparent transparent;
+      display: block;
+      width: 0;
+    }
+    .vtx-tag-title {
+      font-size: 11px;
+      color: #38bdf8;
+      font-weight: 800;
+      border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+      padding-bottom: 2px;
+      margin-bottom: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .vtx-tag-val {
+      font-family: 'Consolas', monospace;
+      font-size: 11px;
+      color: #fde047;
+      line-height: 1.35;
+      direction: ltr;
+      text-align: left;
+    }
+
+    /* GPS Coordinates Table in Inspector Card */
+    .coords-table-box {
+      margin-top: 10px;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .coords-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+      text-align: center;
+    }
+    .coords-table th {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      padding: 6px 4px;
+      font-weight: 700;
+      border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .coords-table td {
+      padding: 6px 4px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+      color: #e2e8f0;
+      font-family: 'Consolas', monospace;
+      font-size: 11px;
+    }
+    .coords-table tr:hover td {
+      background: rgba(56, 189, 248, 0.08);
+      color: #facc15;
+    }
+    .coords-copy-btn {
+      background: rgba(56, 189, 248, 0.18);
+      border: 1px solid #38bdf8;
+      color: #38bdf8;
+      border-radius: 4px;
+      padding: 2px 6px;
+      cursor: pointer;
+      font-size: 11px;
+      transition: all 0.2s;
+    }
+    .coords-copy-btn:hover {
+      background: #38bdf8;
+      color: #0f172a;
+    }
+    .coords-actions-bar {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .btn-action-gps {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(15, 23, 42, 0.8));
+      color: #38bdf8;
+      transition: all 0.2s;
+    }
+    .btn-action-gps:hover {
+      background: #38bdf8;
+      color: #0f172a;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+    }
+
+    </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <!-- Floating Dock Buttons for Minimized Panels & Navigation -->
+  <div class="dock-container" id="dockContainer">
+    <button id="dockBtnRightPanel" class="floating-dock-btn dock-right" style="display:none" onclick="restorePanel('rightPanel')" title="استعادة نافذة أدوات الرسم">
+      <span>🛰️</span><span>أدوات الرسم والتحديد</span>
+    </button>
+    <button id="dockBtnShapeList" class="floating-dock-btn dock-left-top" style="display:none" onclick="restorePanel('shapeListBox')" title="استعادة قائمة الأشكال">
+      <span>📋</span><span>قائمة الأشكال</span>
+    </button>
+    <button id="dockBtnInspector" class="floating-dock-btn dock-left-bottom" style="display:none" onclick="restorePanel('inspectorBox')" title="استعادة بطاقة بيانات الأرض">
+      <span>🗂️</span><span>بطاقة بيانات الأرض</span>
+    </button>
+    <a href="teach.html" class="floating-dock-btn dock-survey-link" style="text-decoration:none;border-color:rgba(168,85,247,0.6);background:linear-gradient(135deg,rgba(15,23,42,0.94),rgba(126,34,206,0.9))" title="العودة إلى لوحة المخطط العام">
+      <span>🗺️</span><span>العودة إلى لوحة المخطط العام</span>
+    </a>
+  </div>
+
+
+  <!-- ================= MOBILE NAVIGATION & DRAWING CONTROLS ================= -->
+    <!-- ================= MOBILE TOP BAR (Only visible on Mobile) ================= -->
+  <div class="mobile-top-bar" id="mobileTopBar">
+    <button type="button" class="mob-btn" id="mobBtnList" onclick="toggleMobileList()">
+      <span>📋 الأراضي (<span id="mobCnt">46</span>)</span>
+    </button>
+    <button type="button" class="mob-btn mob-btn-blue" onclick="openQuadCalcModal()">
+      <span>🧮 الحاسبة المزدوجة</span>
+    </button>
+    <button type="button" class="mob-btn mob-btn-toggle active" id="mobBtnShowShapes" onclick="toggleShapesVisibilityMobile()" title="إظهار / إخفاء الأراضي">
+      <span id="mobShowShapesTxt">👁️ الخريطة: ظاهرة</span>
+    </button>
+  </div>
+  <div class="mobile-drawer-backdrop" id="mobileDrawerBackdrop" onclick="closeMobileList()"></div>
+
+
+  <!-- ================= RIGHT PANEL: MODE & DRAWING TOOLS ================= -->
+  <aside class="right-panel" id="rightPanel">
+    <div class="panel-header">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span>🛰️ أدوات الرسم والتحديد</span>
+        <span style="font-size:11px;color:#6ee7b7">الحفظ تلقائي ✔</span>
+      </div>
+      <button type="button" class="mobile-panel-close" onclick="minimizePanel('rightPanel')" title="تصغير النافذة إلى زر جانبي">✖</button>
+    </div>
+
+    <!-- 1. Mode Switch: Select vs Add -->
+    <div class="section">
+      <!-- Edit Lock Status Banner -->
+      <div class="lock-banner locked" id="lockBanner">
+        <span id="lockStatusText">✏️ وضع الرسم والتعديل المساحي مفتوح</span>
+        <button class="btn" id="btnToggleLock" style="padding:3px 8px;font-size:11px;border-color:#facc15;color:#facc15" onclick="toggleEditLock()">🔒 حماية</button>
+      </div>
+
+      <div class="section-title">١) اختر وضع العمل (تحديد قطعة أو إضافة جديد)</div>
+      <div class="mode-switch">
+        <button class="mode-btn active-select" id="btnModeSelect" onclick="setMode('select')">
+          ✋ تحديد / تعديل
+        </button>
+        <button class="mode-btn" id="btnModeAdd" onclick="setMode('add')">
+          ➕ إضافة / رسم
+        </button>
+      </div>
+
+      <a href="mobile.html" class="btn" style="width:100%;margin-top:6px;justify-content:center;background:linear-gradient(135deg, rgba(14, 165, 233, 0.35), rgba(3, 105, 161, 0.5));border-color:#38bdf8;color:#7dd3fc;font-size:12px;padding:6px 10px;text-decoration:none;">📱 فتح واجهة الموبايل الذكية</a>
+      <!-- Quadrilateral Area Calculator Button -->
+      <button class="btn" style="width:100%;margin-top:8px;justify-content:center;background:linear-gradient(135deg, rgba(59,130,246,0.25), rgba(30,58,138,0.45));border-color:#3b82f6;color:#93c5fd;font-size:12.5px;padding:7px 10px" onclick="openQuadCalcModal()">
+        🧮 حاسبة مساحة الشكل الرباعي
+      </button>
+    </div>
+
+    <!-- 2. Shape Type Selector (Active in Add Mode) -->
+    <div class="section" id="addToolsSection">
+      <div class="section-title">٢) اختر نوع الشكل المراد إضافته</div>
+      <div class="tools" id="tools"></div>
+      <div class="draw-actions" id="drawActionsBar" style="display:none">
+        <button class="btn btn-green" style="flex:1" onclick="finishDraw()">✅ إنهاء وحفظ</button>
+        <button class="btn" onclick="undoLastPoint()" title="مسح آخر نقطة">↩️ تراجع</button>
+        <button class="btn btn-red" onclick="cancelDraw()" title="إلغاء الرسم الحالي">✖</button>
+      </div>
+    </div>
+
+    <!-- 3. View & Points Visibility Options -->
+    <div class="section">
+      <div class="section-title">٣) خيارات النقاط والخريطة</div>
+      <label class="chk" style="color:#6ee7b7;font-weight:700">
+        <input type="checkbox" id="chkShowShapes" checked onchange="toggleShapesVisibility()" />
+        <span>🗺️ إظهار قطع الأراضي والحدود المرسومة</span>
+      </label>
+      <label class="chk">
+        <input type="checkbox" id="chkShowPoints" checked onchange="renderGuidePoints()" />
+        <span>🔘 إظهار نقاط الزوايا (Points) على كل الحدود</span>
+      </label>
+      <label class="chk">
+        <input type="checkbox" id="chkSnapEdges" checked />
+        <span>🧲 جذب تلقائي للنقاط والحدود المجاورة (Snap)</span>
+      </label>
+      <label class="chk">
+        <input type="checkbox" id="chkLabels" checked onchange="renderAll()" />
+        <span>🏷️ إظهار الأسماء والمساحات على الخريطة</span>
+      </label>
+
+      <div class="row" style="margin-top:10px">
+        <button class="btn" style="flex:1" onclick="map.fitBounds(L.latLngBounds(PINS), {padding:[30,30]})">🎯 الـ 4 دبابيس</button>
+        <button class="btn" style="flex:1" onclick="exportJSON()">💾 حفظ ملف</button>
+        <button class="btn" onclick="document.getElementById('importFile').click()">📂 استيراد</button>
+        <input type="file" id="importFile" style="display:none" accept=".json" onchange="importJSON(event)" />
+      </div>
+
+      <button class="btn" style="width:100%;margin-top:8px;justify-content:center;background:linear-gradient(135deg, rgba(59,130,246,0.28), rgba(30,58,138,0.5));border-color:#3b82f6;color:#93c5fd;font-size:12.5px;padding:8px 10px" onclick="openQuadCalcModal()">
+        🧮 حاسبة مساحة الشكل الرباعي
+      </button>
+    </div>
+
+    <!-- 4. Quick Instructions -->
+    <div class="section help" style="border-bottom:none">
+      <b>💡 إرشادات سريعة:</b><br/>
+      • <b>لتحديد عدة قطع معاً:</b> اضغط زرار <kbd>Ctrl</kbd> من لوحة المفاتيح مع الضغط بالماوس على كذا قطعة أرض لعرض أسمائهم جنب بعض ومجموع مساحتهم.<br/>
+      • <b>لمسح نقطة أو عدة نقاط من الضلع:</b> حدد الشكل ثم اضغط بالماوس على النقطة أو النقاط الزائدة على الضلع (ستتلون بالأحمر)، ثم اضغط زرار <kbd>Backspace</kbd> لمسحها فوراً.<br/>
+      • <b>لإضافة نقطة جديدة على ضلع:</b> أثناء تحديد الأرض، اسحب النقطة الزرقاء الصغيرة في منتصف أي ضلع.<br/>
+      • <b>لرسم أرض جديدة ملاصقة:</b> اضغط <b>«➕ إضافة / رسم»</b> ثم دوس على نقاط الزوايا البيضاء الظاهرة على حدود الأرض المجاورة، واضغط <kbd>Enter</kbd> لإنهاء الرسم.
+    </div>
+  </aside>
+
+  <!-- ================= LEFT SIDEBAR: LIST (TOP) + INSPECTOR CARD (BOTTOM) ================= -->
+  <aside class="left-sidebar">
+    <!-- TOP LEFT: Drawn Shapes List -->
+    <div class="left-box list-box" id="shapeListBox">
+      <div class="panel-header">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span>📋 قائمة الأشكال (<span id="cnt">0</span>)</span>
+          <span style="font-size:11px;color:#cbd5e1">اضغط للتحديد</span>
+        </div>
+        <button type="button" class="mobile-panel-close" onclick="minimizePanel('shapeListBox')" title="تصغير القائمة إلى زر جانبي">✖</button>
+      </div>
+      <div class="filter-bar">
+        <input type="text" id="searchInput" placeholder="🔍 ابحث بالاسم أو المالك أو الملاحظة..." oninput="renderList()" />
+        <select id="typeFilter" onchange="renderList()">
+          <option value="ALL">الكل</option>
+          <option value="parcel">🟩 أراضي</option>
+          <option value="building">🟥 مباني</option>
+          <option value="canal">🟦 ترع</option>
+          <option value="drain">🟪 مساقي</option>
+          <option value="road">⬜ طرق</option>
+        </select>
+      </div>
+      <div class="list" id="list"></div>
+    </div>
+
+    <!-- BOTTOM LEFT: Selected / Drawing Parcel Inspector Card -->
+    <div class="left-box card-box" id="inspectorBox">
+      <div class="panel-header" style="background:linear-gradient(135deg, #1e3a8a, #0f172a);display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden">
+          <span id="cardHeaderTitle" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🗂️ بطاقة قطعة الأرض</span>
+          <span id="cardBadge" style="font-size:10.5px;background:rgba(250,204,21,0.2);color:#facc15;padding:2px 6px;border-radius:6px;white-space:nowrap">اختر قطعة</span>
+        </div>
+        <button type="button" class="mobile-panel-close" onclick="minimizePanel('inspectorBox')" title="تصغير البطاقة إلى زر جانبي">✖</button>
+      </div>
+
+      <!-- Empty State when nothing is selected or being drawn -->
+      <div id="cardEmptyState" style="padding:26px 16px;text-align:center;color:#94a3b8;font-size:13px;line-height:1.8;">
+        👆 اضغط على أي <b>قطعة أرض</b> لعرض مساحتها وبياناتها، أو اضغط <kbd>Ctrl</kbd> مع الماوس على <b>أكثر من قطعة</b> لعرض أسمائهم جنب بعض ومجموع مساحتهم الإجمالية.
+      </div>
+
+      <!-- Multi-Select Combined Card (When 2+ parcels are selected via Ctrl+Click) -->
+      <div class="card-body" id="cardMultiBody" style="display:none">
+        <div class="area-banner" style="background:linear-gradient(135deg, rgba(250, 204, 21, 0.22), rgba(30, 41, 59, 0.95));border-color:#facc15;">
+          <div>
+            <div style="font-size:11px;color:#fde047;font-weight:700;margin-bottom:2px">📊 مجموع مساحة القطع المحددة (<span id="multiCountNum">0</span> قطع)</div>
+            <div class="faddan" id="multiTotalFaddan">0 فدان ، 0 قيراط ، 0 سهم</div>
+          </div>
+          <div class="sqm" id="multiTotalSqm" style="font-size:14px">0 م²</div>
+        </div>
+
+        <div class="qirat-calc-box">
+          <div class="qirat-calc-top">
+            <label>📐 حساب المجموع على القيراط (م²):</label>
+            <div class="qirat-input-wrap">
+              <div class="qirat-presets">
+                <button type="button" class="qirat-preset-btn" onclick="setMultiQirat(175)">175</button>
+                <button type="button" class="qirat-preset-btn" onclick="setMultiQirat(171.35)">171.35</button>
+              </div>
+              <input type="number" id="inpMultiQiratSqm" value="175" min="50" max="500" step="0.01" oninput="updateInspectorCard()" />
+              <span style="font-size:11px;color:#94a3b8;font-weight:700">م²</span>
+            </div>
+          </div>
+          <div class="qirat-equation">
+            <span id="multiQiratEquation">المجموع ÷ 175 م² = 0.00 قيراط</span>
+            <strong id="multiTotalQirats" style="color:#38bdf8">إجمالي: 0.00 قيراط</strong>
+          </div>
+        </div>
+
+        <div class="form-group full">
+          <label>👥 أسماء القطع المحددة جنب بعض:</label>
+          <div class="multi-chips-wrap" id="multiChipsBox"></div>
+        </div>
+
+        <div class="form-group full">
+          <label>📋 تفصيل مساحة كل قطعة ضمن الاختيار:</label>
+          <div class="multi-table" id="multiTableBox"></div>
+        </div>
+
+        <div style="display:flex;gap:6px;margin-top:auto;padding-top:6px">
+          <button class="btn" style="flex:1" onclick="zoomToMultiSelected()">🔍 تقريب على المجموعة</button>
+          <button class="btn btn-red" onclick="deselect()">✖ إلغاء التحديد</button>
+        </div>
+      </div>
+
+      <!-- Active Form when a shape is selected or being drawn -->
+      <div class="card-body" id="cardFormBody" style="display:none">
+        <!-- Area Banner -->
+        <div class="area-banner">
+          <div class="faddan" id="infoFaddan">0 فدان ، 0 قيراط ، 0 سهم</div>
+          <div class="sqm" id="infoSqm">0 م²</div>
+        </div>
+
+        <!-- Selected Vertices Deletion Bar (Appears when 1+ vertices on the polygon are clicked) -->
+        <div id="vertexDeleteBar" style="display:none;background:rgba(239,68,68,0.16);border:1px solid #ef4444;border-radius:8px;padding:6px 10px;align-items:center;justify-content:space-between;gap:8px;">
+          <span id="vertexDeleteText" style="font-size:11.5px;color:#fca5a5;font-weight:700;">🔴 تم تحديد 1 نقطة على الضلع</span>
+          <div style="display:flex;gap:5px;">
+            <button type="button" class="btn btn-red" style="padding:3px 8px;font-size:11px;" onclick="deleteSelectedVertices()">🗑️ مسح (Backspace)</button>
+            <button type="button" class="btn" style="padding:3px 7px;font-size:11px;" onclick="clearSelectedVertices()">✖</button>
+          </div>
+        </div>
+
+        <!-- Qirat Size & Calculation Box (Default 175 m², Editable e.g. 171.35 m²) -->
+        <div class="qirat-calc-box" id="qiratCalcBox">
+          <div class="qirat-calc-top">
+            <label>📐 مساحة القيراط الواحد (م²):</label>
+            <div class="qirat-input-wrap">
+              <div class="qirat-presets">
+                <button type="button" class="qirat-preset-btn" onclick="setQiratPreset(175)">175</button>
+                <button type="button" class="qirat-preset-btn" onclick="setQiratPreset(171.35)">171.35</button>
+              </div>
+              <input type="number" id="inpQiratSqm" value="175" min="50" max="500" step="0.01" oninput="onCardFieldChange()" />
+              <span style="font-size:11px;color:#94a3b8;font-weight:700">م²</span>
+            </div>
+          </div>
+          <div class="qirat-equation">
+            <span id="infoQiratEquation">الحسبة: 0 م² ÷ 175 م² = 0.00 قيراط</span>
+            <strong id="infoTotalQirats" style="color:#38bdf8">إجمالي: 0.00 قيراط</strong>
+          </div>
+
+          <!-- Edit-Mode ONLY Customary Area Button & Box -->
+          <div id="editModeUrfiContainer" style="display:none;border-top:1px solid rgba(255,255,255,0.08);padding-top:6px;margin-top:3px;flex-direction:column;gap:5px;">
+            <div style="display:flex;gap:6px;align-items:center;">
+              <button type="button" class="btn" id="btnToggleUrfiView" style="flex:1;justify-content:center;padding:4px 8px;font-size:11px;border-color:#facc15;color:#fde047;" onclick="toggleUrfiInEditMode()">
+                📏 إظهار المساحة العُرفية (في وضع التعديل)
+              </button>
+            </div>
+            <div id="urfiEditDetailsBox" style="display:none;background:rgba(250,204,21,0.1);border:1px solid rgba(250,204,21,0.35);border-radius:7px;padding:6px 8px;font-size:11px;color:#fef08a;line-height:1.6;">
+              <div id="infoUrfiFormula">المساحة العُرفية: --</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 Cardinal Side Lengths -->
+        <div class="dims-grid" id="dimsGridBox">
+          <div class="dim-cell"><span>⬆️ بحري (شمال)</span><strong id="dimNorth">0.0 م</strong></div>
+          <div class="dim-cell"><span>⬇️ قبلي (جنوب)</span><strong id="dimSouth">0.0 م</strong></div>
+          <div class="dim-cell"><span>➡️ شرقي</span><strong id="dimEast">0.0 م</strong></div>
+          <div class="dim-cell"><span>⬅️ غربي</span><strong id="dimWest">0.0 م</strong></div>
+        </div>
+
+        <!-- Editable Metadata Fields -->
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>👤 اسم المالك / اسم الشكل</label>
+            <input type="text" id="inpOwner" placeholder="اكتب اسم المالك أو اسم الشكل هنا..." oninput="onCardFieldChange()" />
+          </div>
+
+          <div class="form-group">
+            <label>🔢 كود القطعة</label>
+            <input type="text" id="inpCode" placeholder="مثال: HW-001" oninput="onCardFieldChange()" />
+          </div>
+
+          <div class="form-group">
+            <label>🏷️ تصنيف الشكل</label>
+            <select id="inpType" onchange="onCardFieldChange()">
+              <option value="parcel">🟩 قطعة أرض زراعية</option>
+              <option value="building">🟥 مبنى / بيوت</option>
+              <option value="canal">🟦 ترعة / مجرى ماء</option>
+              <option value="drain">🟪 مصرف / مسقى</option>
+              <option value="road">⬜ طريق / فاصل</option>
+              <option value="basin">🟨 حدود حوض</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>🌾 اسم الحوض الزراعي</label>
+            <input type="text" id="inpBasin" placeholder="مثال: حوض العمدة / الوسط" oninput="onCardFieldChange()" />
+          </div>
+
+          <div class="form-group">
+            <label>📌 حالة الملكية</label>
+            <select id="inpStatus" onchange="onCardFieldChange()">
+              <option value="ملك خاص">ملك خاص</option>
+              <option value="متاح للبيع">متاح للبيع</option>
+              <option value="مباع">مباع</option>
+              <option value="ورثة">ورثة</option>
+              <option value="غير محدد">غير محدد</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>🌱 نوع الزراعة / الوصف</label>
+            <input type="text" id="inpCrop" placeholder="مثال: قمح / برسيم / ذرة..." oninput="onCardFieldChange()" />
+          </div>
+
+          <div class="form-group">
+            <label>📞 رقم تليفون المالك</label>
+            <input type="text" id="inpPhone" placeholder="010xxxxxxxx" oninput="onCardFieldChange()" />
+          </div>
+
+          <div class="form-group full">
+            <label>🎨 لون تمييز القطعة على الخريطة</label>
+            <div class="swatches" id="colorSwatches"></div>
+          </div>
+
+          <div class="form-group full">
+            <label>📝 ملاحظات (الجيران / تفاصيل الحدود / المساحة بالعقد)</label>
+            <textarea id="inpNote" rows="2" placeholder="اكتب أي ملاحظات أو أسماء الجيران هنا..." oninput="onCardFieldChange()"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-footer" id="cardFooterBar" style="display:none">
+        <button class="btn btn-green" style="flex:1" onclick="saveCardExplicit()">✅ حفظ البيانات</button>
+        <button class="btn" onclick="zoomToSelected()" title="تقريب الكاميرا على هذا الشكل">🔍 تقريب</button>
+        <button class="btn btn-red" id="btnDeleteSelected" onclick="deleteSelected()" title="حذف هذا الشكل">🗑️ حذف</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="status" id="status">وضع التحديد الفعال: اضغط على أي قطعة أرض لعرضها، أو اضغط Ctrl + كليك لتحديد عدة قطع معاً وحساب مجموع مساحتهم.</div>
+
+  <!-- Password / PIN Modal for Editing Protection -->
+  <div class="pin-modal-backdrop" id="pinModalBackdrop">
+    <div class="pin-modal">
+      <h3>🔐 حماية التعديل بكلمة سر</h3>
+      <p>التصفح وعرض المساحات متاح للجميع.<br/>لإضافة أو تعديل أو حذف أي قطعة أرض، أدخل كلمة السر الخاصة بالتعديل:</p>
+      <input type="password" id="pinInputBox" class="pin-input" maxlength="20" style="letter-spacing:4px;direction:ltr" placeholder="•••••" onkeydown="if(event.key==='Enter') submitPinModal()" />
+      <div class="pin-error" id="pinErrorMsg"></div>
+      <div class="row" style="justify-content:center;gap:8px">
+        <button class="btn btn-green" style="flex:1;justify-content:center" onclick="submitPinModal()">🔓 فتح التعديل</button>
+        <button class="btn btn-red" onclick="closePinModal()">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quadrilateral Area Calculator Modal (حاسبة مساحة الشكل الرباعي) -->
+  <div class="pin-modal-backdrop" id="quadCalcModalBackdrop">
+    <div class="quad-modal">
+      <div class="quad-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:42px;height:42px;border-radius:11px;background:#090d16;border:1px solid #1e293b;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <polygon points="24,18 82,25 85,82 15,82" fill="rgba(59, 130, 246, 0.22)" stroke="#3b82f6" stroke-width="5" stroke-linejoin="round"/>
+              <circle cx="24" cy="18" r="6.5" fill="#3b82f6"/>
+              <circle cx="82" cy="25" r="6.5" fill="#3b82f6"/>
+              <circle cx="85" cy="82" r="6.5" fill="#3b82f6"/>
+              <circle cx="15" cy="82" r="6.5" fill="#3b82f6"/>
+            </svg>
+          </div>
+          <div>
+            <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0;">حاسبة مساحة الشكل الرباعي</h2>
+            <p style="font-size:11.5px;color:#94a3b8;margin:0;">حساب المساحة بالمتر المربع وبالفدان والقيراط والسهم (بطريقة متوسط الأضلاع المتقابلة)</p>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:4px;">
+            <label style="font-size:11.5px;color:#cbd5e1;font-weight:700;">مساحة القيراط (م²):</label>
+            <button type="button" class="qirat-preset-btn" onclick="document.getElementById('quadKiratSize').value=175;calculateQuadModal()">175</button>
+            <button type="button" class="qirat-preset-btn" onclick="document.getElementById('quadKiratSize').value=171.35;calculateQuadModal()">171.35</button>
+            <input type="number" id="quadKiratSize" value="175" min="1" step="any" oninput="calculateQuadModal()" style="width:68px;background:#090d16;color:#facc15;border:1px solid #334155;border-radius:7px;padding:4px 6px;font-size:12px;font-weight:800;text-align:center;" />
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <label style="font-size:11.5px;color:#cbd5e1;">الوحدة:</label>
+            <select id="quadUnitSelect" onchange="calculateQuadModal()" style="background:#090d16;color:#fff;border:1px solid #334155;border-radius:7px;padding:4px 6px;font-size:11.5px;">
+              <option value="م">متر (م)</option>
+              <option value="سم">سنتيمتر (سم)</option>
+              <option value="مم">مليمتر (مم)</option>
+              <option value="قدم">قدم</option>
+            </select>
+          </div>
+          <button type="button" class="btn btn-red" style="padding:4px 10px;" onclick="closeQuadCalcModal()">✖ إغلاق</button>
+        </div>
+      </div>
+
+      <!-- Dual Calculators Layout: Right = Quad Calc, Left = Standard Calc, Mobile = Stacked Underneath -->
+      <div class="quad-dual-layout">
+
+        <!-- RIGHT COLUMN: Quadrilateral Area Calculator -->
+        <div style="background:#0b1120;border:1.5px solid rgba(59,130,246,0.35);border-radius:14px;padding:14px;">
+          <div class="quad-grid">
+            <!-- Inputs & Results Column -->
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div class="quad-inputs-grid">
+                <div class="quad-input-box">
+                  <label>الضلع الأول (أ - العلوي / البحري)</label>
+                  <input type="number" id="quadSideA" value="10" min="0" step="any" oninput="calculateQuadModal()" />
+                </div>
+                <div class="quad-input-box">
+                  <label>الضلع الثاني (ب - الأيمن / الشرقي)</label>
+                  <input type="number" id="quadSideB" value="8" min="0" step="any" oninput="calculateQuadModal()" />
+                </div>
+                <div class="quad-input-box">
+                  <label>الضلع الثالث (ج - السفلي / القبلي)</label>
+                  <input type="number" id="quadSideC" value="12" min="0" step="any" oninput="calculateQuadModal()" />
+                </div>
+                <div class="quad-input-box">
+                  <label>الضلع الرابع (د - الأيسر / الغربي)</label>
+                  <input type="number" id="quadSideD" value="9" min="0" step="any" oninput="calculateQuadModal()" />
+                </div>
+              </div>
+
+              <div id="quadErrorBox" style="display:none;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#fca5a5;border-radius:8px;padding:7px 10px;font-size:11.5px;font-weight:700;"></div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div class="quad-stat-box">
+                  <div style="font-size:11px;color:#94a3b8;">المساحة الكلية (عُرفي)</div>
+                  <div id="quadAvgArea" style="font-size:16px;font-weight:800;color:#38bdf8;margin-top:2px;">--</div>
+                  <div id="quadFormulaNote" style="font-size:11px;color:#fde047;">--</div>
+                  <button type="button" class="quad-send-btn" onclick="addModalQuadAreaToStdCalc()" title="إضافة هذه المساحة إلى الآلة الحاسبة على اليسار">
+                    ➕ أضف للآلة الحاسبة
+                  </button>
+                </div>
+                <div class="quad-stat-box" style="display:flex;flex-direction:column;justify-content:center;">
+                  <div style="font-size:11px;color:#94a3b8;">المحيط الكلي</div>
+                  <div id="quadPerimeterVal" style="font-size:16px;font-weight:800;color:#fff;margin-top:2px;">--</div>
+                  <div style="font-size:11px;color:#94a3b8;">مجموع الأضلاع</div>
+                </div>
+              </div>
+
+              <div class="quad-stat-box" style="text-align:right;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                  <span style="font-size:11.5px;font-weight:700;color:#cbd5e1;">المساحة بالفدان والقيراط والسهم:</span>
+                  <span id="quadTotalKiratsNote" style="font-size:11px;color:#6ee7b7;font-weight:700;">--</span>
+                </div>
+                <div class="quad-fks-grid">
+                  <div class="quad-fks-card">
+                    <div id="quadFeddanVal" style="font-size:16px;font-weight:800;color:#facc15;">0</div>
+                    <div style="font-size:11px;color:#94a3b8;">فدان</div>
+                  </div>
+                  <div class="quad-fks-card">
+                    <div id="quadKiratVal" style="font-size:16px;font-weight:800;color:#facc15;">0</div>
+                    <div style="font-size:11px;color:#94a3b8;">قيراط</div>
+                  </div>
+                  <div class="quad-fks-card">
+                    <div id="quadSahmVal" style="font-size:16px;font-weight:800;color:#facc15;">0.00</div>
+                    <div style="font-size:11px;color:#94a3b8;">سهم</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Visual Canvas Column -->
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;background:#090d16;border:1px solid rgba(148,163,184,0.22);border-radius:12px;padding:10px;">
+              <canvas id="quadCanvas" width="240" height="215" style="max-width:100%;"></canvas>
+              <div style="font-size:11px;color:#94a3b8;text-align:center;margin-top:4px;">معاينة تخطيطية للشكل الرباعي</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LEFT COLUMN: Standard Calculator -->
+        <div class="std-calc-card">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;border-bottom:1px solid rgba(148,163,184,0.18);padding-bottom:8px;">
+              <span style="font-size:20px;">🧮</span>
+              <div>
+                <h3 style="font-size:14px;font-weight:800;color:#fff;margin:0;">آلة حاسبة عادية</h3>
+                <span style="font-size:10.5px;color:#94a3b8;">لجمع مساحات القطع والعمليات الحسابية</span>
+              </div>
+            </div>
+
+            <!-- Digital Screen -->
+            <div class="modal-std-screen">
+              <div class="modal-std-expr" id="modalStdExpr"></div>
+              <div class="modal-std-val" id="modalStdDisplay">0</div>
+            </div>
+
+            <!-- Instant Conversion of Result to Feddan / Kirat / Sahm -->
+            <div class="modal-std-fks-bar">
+              <span style="color:#cbd5e1;font-weight:700;">الناتج (كمتر مربع):</span>
+              <strong id="modalStdFksResult" style="color:#facc15;font-weight:800;">0 ف ، 0 ط ، 0.00 س</strong>
+            </div>
+          </div>
+
+          <!-- Keypad -->
+          <div class="modal-std-keypad">
+            <button type="button" class="modal-std-key clr" onclick="modalStdClear()">C</button>
+            <button type="button" class="modal-std-key clr" onclick="modalStdBackspace()">⌫</button>
+            <button type="button" class="modal-std-key op" onclick="modalStdAppend('%')">%</button>
+            <button type="button" class="modal-std-key op" onclick="modalStdAppend('/')">÷</button>
+
+            <button type="button" class="modal-std-key" onclick="modalStdAppend('7')">7</button>
+            <button type="button" class="modal-std-key" onclick="modalStdAppend('8')">8</button>
+            <button type="button" class="modal-std-key" onclick="modalStdAppend('9')">9</button>
+            <button type="button" class="modal-std-key op" onclick="modalStdAppend('*')">×</button>
+
+            <button type="button" class="modal-std-key" onclick="modalStdAppend('4')">4</button>
+            <button type="button" class="modal-std-key" onclick="modalStdAppend('5')">5</button>
+            <button type="button" class="modal-std-key" onclick="modalStdAppend('6')">6</button>
+            <button type="button" class="modal-std-key op" onclick="modalStdAppend('-')">−</button>
+
+            <button type="button" class="modal-std-key" onclick="modalStdAppend('1')">1</button>
+            <button type="button" class="modal-std-key" onclick="modalStdAppend('2')">2</button>
+            <button type="button" class="modal-std-key" onclick="modalStdAppend('3')">3</button>
+            <button type="button" class="modal-std-key op" onclick="modalStdAppend('+')">+</button>
+
+            <button type="button" class="modal-std-key" onclick="modalStdAppend('0')">0</button>
+            <button type="button" class="modal-std-key" onclick="modalStdAppend('.')">.</button>
+            <button type="button" class="modal-std-key eq" onclick="modalStdEvaluate()">=</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+    
+    // ================= MOBILE NAVIGATION & TOP CARD LOGIC =================
+    function toggleMobileList() {
+      const listBox = document.querySelector('.left-box.list-box');
+      const backdrop = document.getElementById('mobileDrawerBackdrop');
+      if (!listBox) return;
+      const isOpen = listBox.classList.contains('mobile-open');
+      if (isOpen) {
+        closeMobileList();
+      } else {
+        listBox.classList.add('mobile-open');
+        if (backdrop) backdrop.classList.add('active');
+      }
+    }
+
+    
+    function minimizePanel(panelId) {
+      const el = document.getElementById(panelId);
+      if (!el) return;
+      el.style.display = 'none';
+      if (panelId === 'rightPanel') {
+        const btn = document.getElementById('dockBtnRightPanel');
+        if (btn) btn.style.display = 'inline-flex';
+      } else if (panelId === 'shapeListBox') {
+        const btn = document.getElementById('dockBtnShapeList');
+        if (btn) btn.style.display = 'inline-flex';
+      } else if (panelId === 'inspectorBox') {
+        const btn = document.getElementById('dockBtnInspector');
+        if (btn) btn.style.display = 'inline-flex';
+      }
+    }
+
+    function restorePanel(panelId) {
+      const el = document.getElementById(panelId);
+      if (!el) return;
+      el.style.display = 'flex';
+      if (panelId === 'rightPanel') {
+        const btn = document.getElementById('dockBtnRightPanel');
+        if (btn) btn.style.display = 'none';
+      } else if (panelId === 'shapeListBox') {
+        const btn = document.getElementById('dockBtnShapeList');
+        if (btn) btn.style.display = 'none';
+      } else if (panelId === 'inspectorBox') {
+        const btn = document.getElementById('dockBtnInspector');
+        if (btn) btn.style.display = 'none';
+      }
+    }
+
+    function closeMobileList() {
+      const listBox = document.querySelector('.left-box.list-box');
+      const backdrop = document.getElementById('mobileDrawerBackdrop');
+      if (listBox) listBox.classList.remove('mobile-open');
+      if (backdrop) backdrop.classList.remove('active');
+    }
+
+    function toggleShapesVisibilityMobile() {
+      const chk = document.getElementById('chkShowShapes');
+      if (chk) {
+        chk.checked = !chk.checked;
+        toggleShapesVisibility();
+      }
+    }
+
+    function updateMobileInspectorState() {
+      const inspBox = document.getElementById('inspectorBox');
+      if (!inspBox) return;
+      if (window.innerWidth <= 900) {
+        if (selected !== null || (selectedIds && selectedIds.length > 0)) {
+          inspBox.classList.add('mobile-open');
+        } else {
+          inspBox.classList.remove('mobile-open');
+        }
+      } else {
+        inspBox.classList.remove('mobile-open');
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      updateMobileInspectorState();
+      if (window.innerWidth > 900) {
+        closeMobileList();
+      }
+    });
+
+
+  </script>
+  <script>
+    const PINS = [
+      [27.2607972, 30.9682278],
+      [27.2694056, 30.9823083],
+      [27.2530194, 30.9948806],
+      [27.2441917, 30.9814722]
+    ];
+
+    const TYPES = {
+      parcel:   { name: 'قطعة أرض',        color: '#22c55e', poly: true  },
+      building: { name: 'مبنى / بيوت',     color: '#ef4444', poly: true  },
+      canal:    { name: 'ترعة / مجرى ماء', color: '#38bdf8', poly: false },
+      drain:    { name: 'مصرف / مسقى',     color: '#a78bfa', poly: false },
+      road:     { name: 'طريق / فاصل',     color: '#f8fafc', poly: false },
+      basin:    { name: 'حدود حوض',        color: '#facc15', poly: true  }
+    };
+
+    const SWATCH_COLORS = [
+      '#22c55e', '#10b981', '#3b82f6', '#f59e0b',
+      '#a855f7', '#06b6d4', '#ec4899', '#84cc16',
+      '#f97316', '#6366f1', '#14b8a6', '#ef4444'
+    ];
+
+    const map = L.map('map', { zoomControl: false, maxZoom: 21, doubleClickZoom: false })
+      .fitBounds(L.latLngBounds(PINS), { padding: [30, 30] });
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 21, maxNativeZoom: 20 }).addTo(map);
+
+    // 4 Pins Boundary
+    L.polygon(PINS, { color: '#facc15', weight: 3, dashArray: '10,8', fill: false, interactive: false }).addTo(map);
+    PINS.forEach((p, i) => L.marker(p, {
+      icon: L.divIcon({
+        className: '',
+        iconSize: [0, 0],
+        iconAnchor: [0, 0],
+        html: `<div class="lbl-anchor"><div class="lbl" style="background:#facc15;color:#000">📌 دبوس ${i + 1}</div></div>`
+      }),
+      interactive: false
+    }).addTo(map));
+
+    // Layer Groups
+    const featLayer = L.layerGroup().addTo(map);
+    const guidePtsLayer = L.layerGroup().addTo(map);
+    const lblLayer = L.layerGroup().addTo(map);
+    const dimMapLayer = L.layerGroup().addTo(map);
+    const drawLayer = L.layerGroup().addTo(map);
+    const editLayer = L.layerGroup().addTo(map);
+    const snapIndicatorLayer = L.layerGroup().addTo(map);
+
+    // State
+    const EDIT_PIN = 'MS@96'; // Secret password for editing
+    let editUnlocked = true;
+    let pendingPinCallback = null;
+
+    const SEEDED_FEATURES = [];
+    
+    const CIPHER_KEY = "HWK@2026_SECURE_96";
+
+    function decodeSecureText(encoded) {
+      if (typeof encoded !== 'string' || !encoded.startsWith('enc:')) return encoded || '';
+      try {
+        const raw = atob(encoded.slice(4));
+        const keyBytes = new TextEncoder().encode(CIPHER_KEY);
+        const rawBytes = new Uint8Array(raw.length);
+        for (let i = 0; i < raw.length; i++) {
+          rawBytes[i] = raw.charCodeAt(i) ^ keyBytes[i % keyBytes.length];
+        }
+        return new TextDecoder().decode(rawBytes);
+      } catch (e) {
+        return encoded;
+      }
+    }
+
+    function decryptFeatures(featuresList) {
+      if (!Array.isArray(featuresList)) return [];
+      return featuresList.map(f => {
+        const copy = Object.assign({}, f);
+        if (copy.owner) copy.owner = decodeSecureText(copy.owner);
+        if (copy.name) copy.name = decodeSecureText(copy.name);
+        if (copy.basin) copy.basin = decodeSecureText(copy.basin);
+        if (copy.notes) copy.notes = decodeSecureText(copy.notes);
+        return copy;
+      });
+    }
+
+    let features = decryptFeatures([...SEEDED_FEATURES]);
+    let mode = 'select';     // 'select' or 'add'
+    let addType = 'parcel';  // active type when in 'add' mode
+    let pts = [];            // points of shape currently being drawn
+    let draftMeta = {};      // metadata entered in card while drawing a new shape
+    let selected = null;     // ID of primary selected feature (when 1 is selected)
+    let selectedIds = [];    // Array of selected feature IDs (supports Ctrl+Click multi-select!)
+    let selectedVertexIndices = []; // Selected vertex indices on the active shape (to delete with Backspace)
+    let showUrfiInEditMode = false; // Whether to show the Customary Area box in Edit Mode
+    let saveTimer = null;
+
+    // ---------- Password / Edit Lock Management ----------
+    function updateLockUI() {
+      const banner = document.getElementById('lockBanner');
+      const txt = document.getElementById('lockStatusText');
+      const btn = document.getElementById('btnToggleLock');
+      if (!banner) return;
+      if (editUnlocked) {
+        banner.className = 'lock-banner unlocked';
+        txt.innerHTML = '🔓 التعديل مفعل (يمكنك الإضافة والتعديل والحفظ)';
+        btn.innerHTML = '🔒 قفل التعديل';
+        btn.style.borderColor = '#34d399';
+        btn.style.color = '#34d399';
+      } else {
+        banner.className = 'lock-banner locked';
+        txt.innerHTML = '✏️ وضع الرسم والتعديل المساحي مفتوح';
+        btn.innerHTML = '🔒 حماية';
+        btn.style.borderColor = '#facc15';
+        btn.style.color = '#facc15';
+      }
+      renderEditHandles();
+      updateInspectorCard();
+      if (document.getElementById("inspectorBox") && document.getElementById("inspectorBox").style.display === "none") { restorePanel("inspectorBox"); }
+    }
+
+    function requireEditUnlock(callback) {
+      if (editUnlocked) {
+        if (callback) callback();
+        return true;
+      }
+      pendingPinCallback = callback || null;
+      const modal = document.getElementById('pinModalBackdrop');
+      const inp = document.getElementById('pinInputBox');
+      const err = document.getElementById('pinErrorMsg');
+      err.textContent = '';
+      inp.value = '';
+      modal.style.display = 'flex';
+      setTimeout(() => inp.focus(), 60);
+      return false;
+    }
+
+    function submitPinModal() {
+      const inp = document.getElementById('pinInputBox');
+      const err = document.getElementById('pinErrorMsg');
+      if (inp.value.trim() === EDIT_PIN) {
+        editUnlocked = true;
+        sessionStorage.setItem('HAWATKA_EDIT_PIN', EDIT_PIN);
+        document.getElementById('pinModalBackdrop').style.display = 'none';
+        updateLockUI();
+        setStatus('🔓 <b>تم فتح صلاحية التعديل بنجاح!</b> يمكنك الآن الرسم أو تعديل الحدود والبيانات.');
+        if (pendingPinCallback) {
+          const cb = pendingPinCallback;
+          pendingPinCallback = null;
+          cb();
+        }
+      } else {
+        err.textContent = '❌ الرقم السري غير صحيح! (مسموح بالتعديل لصاحب الخريطة فقط)';
+        inp.value = '';
+        inp.focus();
+      }
+    }
+
+    function closePinModal() {
+      pendingPinCallback = null;
+      document.getElementById('pinModalBackdrop').style.display = 'none';
+    }
+
+    function toggleEditLock() {
+      if (editUnlocked) {
+        editUnlocked = false;
+        sessionStorage.removeItem('HAWATKA_EDIT_PIN');
+        if (mode === 'add') setMode('select');
+        updateLockUI();
+        setStatus('🔒 تم قفل التعديل — الخريطة الآن في وضع التصفح والعرض فقط.');
+      } else {
+        requireEditUnlock();
+      }
+    }
+
+    // ---------- Build Shape Type Buttons ----------
+    const toolsBox = document.getElementById('tools');
+    function renderToolButtons() {
+      toolsBox.innerHTML = '';
+      Object.entries(TYPES).forEach(([k, t]) => {
+        const b = document.createElement('button');
+        b.className = 'tool' + (k === addType ? ' active' : '');
+        b.innerHTML = `<span class="sw" style="background:${t.color}"></span>${t.name}`;
+        b.onclick = () => {
+          requireEditUnlock(() => {
+            addType = k;
+            setMode('add');
+            renderToolButtons();
+            updateInspectorCard();
+            setStatus(`وضع الإضافة: ارسم <b>${t.name}</b> بالضغط على الخريطة (النقاط البيضاء على الحدود بتنجذب تلقائياً)`);
+          });
+        };
+        toolsBox.appendChild(b);
+      });
+    }
+    renderToolButtons();
+
+    // ---------- Mode Switching (Select vs Add) ----------
+    function setMode(newMode) {
+      if (newMode === 'add' && !editUnlocked) {
+        requireEditUnlock(() => setMode('add'));
+        return;
+      }
+      mode = newMode;
+      const btnSel = document.getElementById('btnModeSelect');
+      const btnAdd = document.getElementById('btnModeAdd');
+
+      if (mode === 'select') {
+        cancelDraw();
+        btnSel.className = 'mode-btn active-select';
+        btnAdd.className = 'mode-btn';
+        map.getContainer().style.cursor = 'pointer';
+        setStatus('✋ <b>وضع التحديد:</b> اضغط على أي قطعة أرض لعرضها، أو اضغط <kbd>Ctrl</kbd> مع الماوس لتحديد عدة قطع معاً وحساب مجموع مساحتهم.');
+      } else {
+        selected = null;
+        selectedIds = [];
+        editLayer.clearLayers();
+        dimMapLayer.clearLayers();
+        btnSel.className = 'mode-btn';
+        btnAdd.className = 'mode-btn active-add';
+        map.getContainer().style.cursor = 'crosshair';
+        draftMeta = {
+          type: addType,
+          color: TYPES[addType].color,
+          qiratSqm: 175,
+          areaMethod: 'urfi',
+          status: 'ملك خاص',
+          basin: '',
+          owner: '',
+          code: '',
+          crop: '',
+          phone: '',
+          note: ''
+        };
+        setStatus(`➕ <b>وضع الإضافة (${TYPES[addType].name}):</b> اضغط على الخريطة لإضافة الزوايا (دوس على النقاط البيضاء للالتحام بالجار).`);
+      }
+      renderAll();
+      updateInspectorCard();
+    }
+
+    // ---------- Geodesic Geometry Math ----------
+    function dist(a, b) {
+      const R = 6378137, toR = Math.PI / 180;
+      const dLat = (b[0] - a[0]) * toR, dLon = (b[1] - a[1]) * toR;
+      const h = Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * toR) * Math.cos(b[0] * toR) * Math.sin(dLon / 2) ** 2;
+      return 2 * R * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+    }
+
+    function area(c) {
+      if (!c || c.length < 3) return 0;
+      const R = 6378137, toR = Math.PI / 180, lat0 = c[0][0] * toR;
+      const p = c.map(x => [(x[1] - c[0][1]) * toR * R * Math.cos(lat0), (x[0] - c[0][0]) * toR * R]);
+      let s = 0;
+      for (let i = 0; i < p.length; i++) {
+        const j = (i + 1) % p.length;
+        s += p[i][0] * p[j][1] - p[j][0] * p[i][1];
+      }
+      return Math.abs(s) / 2;
+    }
+
+    // Customary (عُرفي) area: product of average opposite sides = ((North + South)/2) * ((East + West)/2)
+    function urfiArea(c) {
+      if (!c || c.length < 3) return 0;
+      const sides = computeCardinalSides(c);
+      const avgNS = (sides.north + sides.south) / 2;
+      const avgEW = (sides.east + sides.west) / 2;
+      if (avgNS <= 0 || avgEW <= 0) return area(c);
+      return avgNS * avgEW;
+    }
+
+    // Standard area is always Geometric (area(coords)) as requested; Customary (urfi) is shown on demand in Edit Mode!
+    function getFeatureArea(fOrCoords, methodOverride = null) {
+      if (!fOrCoords) return 0;
+      const coords = Array.isArray(fOrCoords) ? fOrCoords : fOrCoords.coords;
+      if (!coords || coords.length < 3) return 0;
+      if (methodOverride === 'urfi') return urfiArea(coords);
+      return area(coords);
+    }
+
+    function toggleUrfiInEditMode() {
+      requireEditUnlock(() => {
+        showUrfiInEditMode = !showUrfiInEditMode;
+        updateInspectorCard();
+      });
+    }
+
+    function lineLen(c) {
+      if (!c || c.length < 2) return 0;
+      let s = 0;
+      for (let i = 1; i < c.length; i++) s += dist(c[i - 1], c[i]);
+      return s;
+    }
+
+    function normalizeQiratSqm(val) {
+      const n = parseFloat(val);
+      return (n && n >= 20 && n <= 1000) ? n : 175;
+    }
+
+    function computeFeddanParts(sqm, qiratSqm = 175) {
+      const qSize = normalizeQiratSqm(qiratSqm);
+      const totalSahms = Math.round((sqm / qSize) * 24);
+      const f = Math.floor(totalSahms / 576);
+      const rem = totalSahms - f * 576;
+      const q = Math.floor(rem / 24);
+      const s = rem - q * 24;
+      const totalQirats = sqm / qSize;
+      return { f, q, s, totalQirats, qSize };
+    }
+
+    function feddanText(sqm, qiratSqm = 175) {
+      const { f, q, s } = computeFeddanParts(sqm, qiratSqm);
+      return `${f} فدان ، ${q} قيراط ، ${s} سهم`;
+    }
+
+    function feddanShort(sqm, qiratSqm = 175) {
+      const { f, q, s } = computeFeddanParts(sqm, qiratSqm);
+      return `${f} ف ${q} ط ${s} س`;
+    }
+
+    function setQiratPreset(val) {
+      const inp = document.getElementById('inpQiratSqm');
+      if (inp) {
+        inp.value = val;
+        onCardFieldChange();
+      }
+    }
+
+    function polygonCentroid(coords) {
+      if (!coords || !coords.length) return [0, 0];
+      if (coords.length < 3) {
+        const lat = coords.reduce((s, p) => s + p[0], 0) / coords.length;
+        const lng = coords.reduce((s, p) => s + p[1], 0) / coords.length;
+        return [lat, lng];
+      }
+      let area2 = 0, cx = 0, cy = 0;
+      const n = coords.length;
+      const y0 = coords[0][0], x0 = coords[0][1];
+      for (let i = 0; i < n; i++) {
+        const j = (i + 1) % n;
+        const yi = coords[i][0] - y0, xi = coords[i][1] - x0;
+        const yj = coords[j][0] - y0, xj = coords[j][1] - x0;
+        const cross = xi * yj - xj * yi;
+        area2 += cross;
+        cx += (xi + xj) * cross;
+        cy += (yi + yj) * cross;
+      }
+      if (Math.abs(area2) < 1e-13) {
+        const lat = coords.reduce((s, p) => s + p[0], 0) / n;
+        const lng = coords.reduce((s, p) => s + p[1], 0) / n;
+        return [lat, lng];
+      }
+      const f = 1 / (3 * area2);
+      return [y0 + cy * f, x0 + cx * f];
+    }
+
+    function computeCardinalSides(coords) {
+      if (!coords || coords.length < 3) return { north: 0, south: 0, east: 0, west: 0, edges: [] };
+      const lat0 = coords.reduce((s, p) => s + p[0], 0) / coords.length;
+      const lon0 = coords.reduce((s, p) => s + p[1], 0) / coords.length;
+      const cosLat = Math.cos(lat0 * Math.PI / 180);
+      const R = 6378137;
+      const pts = coords.map(([lat, lon]) => [
+        (lon - lon0) * Math.PI / 180 * R * cosLat,
+        (lat - lat0) * Math.PI / 180 * R
+      ]);
+      const edges = [];
+      let maxSeg = null;
+      for (let i = 0; i < coords.length; i++) {
+        const j = (i + 1) % coords.length;
+        const p1 = coords[i], p2 = coords[j];
+        const x1 = pts[i][0], y1 = pts[i][1];
+        const x2 = pts[j][0], y2 = pts[j][1];
+        const dx = x2 - x1, dy = y2 - y1;
+        const len = dist(p1, p2);
+        const seg = { p1, p2, len, mid: [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2], mx: (x1 + x2) / 2, my: (y1 + y2) / 2, dx, dy };
+        edges.push(seg);
+        if (!maxSeg || len > maxSeg.len) maxSeg = seg;
+      }
+      if (!maxSeg || maxSeg.len === 0) return { north: 0, south: 0, east: 0, west: 0, edges };
+      // Unit axes along the longest side (U) and its perpendicular (V)
+      const ux = maxSeg.dx / maxSeg.len, uy = maxSeg.dy / maxSeg.len;
+      const vx = -uy, vy = ux;
+      // Length-weighted centroid in local meters
+      const totalLen = edges.reduce((s, e) => s + e.len, 0) || 1;
+      const cx = edges.reduce((s, e) => s + e.mx * e.len, 0) / totalLen;
+      const cy = edges.reduce((s, e) => s + e.my * e.len, 0) / totalLen;
+
+      const groups = { u_pos: [], u_neg: [], v_pos: [], v_neg: [] };
+      for (const e of edges) {
+        if (e.len === 0) continue;
+        const dotU = Math.abs(e.dx * ux + e.dy * uy) / e.len;
+        const dotV = Math.abs(e.dx * vx + e.dy * vy) / e.len;
+        const rx = e.mx - cx, ry = e.my - cy;
+        if (dotU >= dotV) {
+          // Edge runs parallel to U; side position is along V
+          if (rx * vx + ry * vy >= 0) groups.u_pos.push(e);
+          else groups.u_neg.push(e);
+        } else {
+          // Edge runs parallel to V; side position is along U
+          if (rx * ux + ry * uy >= 0) groups.v_pos.push(e);
+          else groups.v_neg.push(e);
+        }
+      }
+      const sumLen = arr => arr.reduce((s, e) => s + e.len, 0);
+      const meanPt = arr => {
+        const w = sumLen(arr);
+        if (!w) return [cx, cy];
+        return [arr.reduce((s, e) => s + e.mx * e.len, 0) / w, arr.reduce((s, e) => s + e.my * e.len, 0) / w];
+      };
+      const uPosPt = meanPt(groups.u_pos), uNegPt = meanPt(groups.u_neg);
+      const vPosPt = meanPt(groups.v_pos), vNegPt = meanPt(groups.v_neg);
+      const uDy = Math.abs(uPosPt[1] - uNegPt[1]);
+      const vDy = Math.abs(vPosPt[1] - vNegPt[1]);
+
+      let north = 0, south = 0, east = 0, west = 0;
+      if (uDy >= vDy) {
+        if (uPosPt[1] >= uNegPt[1]) { north = sumLen(groups.u_pos); south = sumLen(groups.u_neg); }
+        else { north = sumLen(groups.u_neg); south = sumLen(groups.u_pos); }
+        if (vPosPt[0] >= vNegPt[0]) { east = sumLen(groups.v_pos); west = sumLen(groups.v_neg); }
+        else { east = sumLen(groups.v_neg); west = sumLen(groups.v_pos); }
+      } else {
+        if (vPosPt[1] >= vNegPt[1]) { north = sumLen(groups.v_pos); south = sumLen(groups.v_neg); }
+        else { north = sumLen(groups.v_neg); south = sumLen(groups.v_pos); }
+        if (uPosPt[0] >= uNegPt[0]) { east = sumLen(groups.u_pos); west = sumLen(groups.u_neg); }
+        else { east = sumLen(groups.u_neg); west = sumLen(groups.u_pos); }
+      }
+      return { north, south, east, west, edges };
+    }
+
+    // ---------- Vertex & Edge Snapping (So adjacent parcels are 100% flush!) ----------
+    function closestPointOnSegment(P, A, B) {
+      const dx = B.x - A.x, dy = B.y - A.y;
+      const len2 = dx * dx + dy * dy;
+      if (len2 === 0) return A;
+      let t = ((P.x - A.x) * dx + (P.y - A.y) * dy) / len2;
+      t = Math.max(0, Math.min(1, t));
+      return L.point(A.x + t * dx, A.y + t * dy);
+    }
+
+    function snapPoint(latlng, excludeFeat = null, excludeIdx = -1) {
+      if (!document.getElementById('chkSnapEdges').checked) {
+        snapIndicatorLayer.clearLayers();
+        return [+latlng.lat.toFixed(7), +latlng.lng.toFixed(7)];
+      }
+      const p = map.latLngToContainerPoint(latlng);
+      let bestVertex = null, bestVertexD = 14; // 14px priority snap to existing vertex points!
+
+      features.forEach(f => {
+        f.coords.forEach((c, idx) => {
+          if (f === excludeFeat && idx === excludeIdx) return;
+          const d = map.latLngToContainerPoint(c).distanceTo(p);
+          if (d < bestVertexD) {
+            bestVertexD = d;
+            bestVertex = c;
+          }
+        });
+      });
+
+      if (!excludeFeat) {
+        pts.forEach(c => {
+          const d = map.latLngToContainerPoint(c).distanceTo(p);
+          if (d < bestVertexD) {
+            bestVertexD = d;
+            bestVertex = c;
+          }
+        });
+      }
+
+      if (bestVertex) {
+        showSnapIndicator(bestVertex);
+        return [bestVertex[0], bestVertex[1]];
+      }
+
+      // Secondary: Snap to nearest edge segment within 9px so tracing along a long edge is also 100% flush!
+      let bestEdgeLatLng = null, bestEdgeD = 9;
+      features.forEach(f => {
+        if (f === excludeFeat) return;
+        const n = f.coords.length;
+        const isClosed = (TYPES[f.type]?.poly || n >= 4);
+        const limit = isClosed ? n : n - 1;
+        for (let i = 0; i < limit; i++) {
+          const A = map.latLngToContainerPoint(f.coords[i]);
+          const B = map.latLngToContainerPoint(f.coords[(i + 1) % n]);
+          const proj = closestPointOnSegment(p, A, B);
+          const d = proj.distanceTo(p);
+          if (d < bestEdgeD) {
+            bestEdgeD = d;
+            const ll = map.containerPointToLatLng(proj);
+            bestEdgeLatLng = [+ll.lat.toFixed(7), +ll.lng.toFixed(7)];
+          }
+        }
+      });
+
+      if (bestEdgeLatLng) {
+        showSnapIndicator(bestEdgeLatLng);
+        return bestEdgeLatLng;
+      }
+
+      snapIndicatorLayer.clearLayers();
+      return [+latlng.lat.toFixed(7), +latlng.lng.toFixed(7)];
+    }
+
+    function showSnapIndicator(coord) {
+      snapIndicatorLayer.clearLayers();
+      L.marker(coord, {
+        interactive: false,
+        icon: L.divIcon({ className: 'snap-ring' })
+      }).addTo(snapIndicatorLayer);
+    }
+
+    // ---------- Render Subtle Guide Points on All Shapes ----------
+    function renderGuidePoints() {
+      guidePtsLayer.clearLayers();
+      const showShapes = document.getElementById('chkShowShapes') ? document.getElementById('chkShowShapes').checked : true;
+      if (!showShapes) return;
+      if (!document.getElementById('chkShowPoints').checked) return;
+      if (map.getZoom() < 15) return; // keep map clean when zoomed way out
+
+      features.forEach(f => {
+        if (f.id === selected) return; // selected shape already has big orange draggable handles
+        f.coords.forEach(c => {
+          L.marker(c, {
+            interactive: false,
+            icon: L.divIcon({ className: 'pt-guide' })
+          }).addTo(guidePtsLayer);
+        });
+      });
+    }
+
+    // ---------- Drawing New Shapes (Add Mode) ----------
+    function redrawTemp(mouseCoord) {
+      drawLayer.clearLayers();
+      document.getElementById('drawActionsBar').style.display = pts.length ? 'flex' : 'none';
+      const mobDraw = document.getElementById('mobileDrawBar');
+      const mobDrawInfo = document.getElementById('mobileDrawInfo');
+      if (mobDraw) {
+        if (pts.length) {
+          mobDraw.style.display = 'flex';
+          if (mobDrawInfo) mobDrawInfo.textContent = `📍 جاري رسم الأرض (${pts.length} نقطة)`;
+        } else {
+          mobDraw.style.display = 'none';
+        }
+      }
+      if (!pts.length) return;
+
+      const t = TYPES[addType];
+      const col = draftMeta.color || t.color;
+      const line = mouseCoord ? [...pts, mouseCoord] : pts;
+
+      if (t.poly && line.length >= 3) {
+        L.polygon(line, { color: col, weight: 2.5, fillColor: col, fillOpacity: 0.32, interactive: false }).addTo(drawLayer);
+      } else {
+        L.polyline(line, { color: col, weight: 3.5, interactive: false }).addTo(drawLayer);
+      }
+
+      pts.forEach((c, i) => {
+        const m = L.marker(c, {
+          icon: L.divIcon({ className: 'vh' + (i === 0 ? ' vh-first' : '') })
+        }).addTo(drawLayer);
+        if (i === 0 && pts.length >= 3) {
+          m.on('click', ev => {
+            L.DomEvent.stopPropagation(ev);
+            finishDraw();
+          });
+        }
+      });
+
+      updateInspectorCard(line);
+      let info = `جاري رسم <b>${t.name}</b> (${pts.length} نقطة)`;
+      if (t.poly && line.length >= 3) {
+        const a = getFeatureArea(line, draftMeta.areaMethod || 'urfi');
+        const qSize = normalizeQiratSqm(draftMeta.qiratSqm || 175);
+        info += ` — المساحة: <b>${Math.round(a)} م²</b> (${feddanShort(a, qSize)})`;
+      } else if (line.length >= 2) {
+        info += ` — الطول: <b>${lineLen(line).toFixed(1)} م</b>`;
+      }
+      setStatus(info + ' &nbsp;|&nbsp; اضغط <kbd>Enter</kbd> أو النقطة الصفراء الأولى لإنهاء وحفظ الشكل');
+    }
+
+    map.on('click', e => {
+      if (mode === 'select') {
+        if (selectedIds.length > 0) deselect();
+        return;
+      }
+      if (!editUnlocked) {
+        requireEditUnlock();
+        return;
+      }
+      const snapped = snapPoint(e.latlng);
+      pts.push(snapped);
+      redrawTemp();
+    });
+
+    map.on('mousemove', e => {
+      if (mode === 'add') {
+        const snapped = snapPoint(e.latlng);
+        if (pts.length) redrawTemp(snapped);
+      }
+    });
+
+    map.on('dblclick', () => {
+      if (mode === 'add' && pts.length) finishDraw();
+    });
+
+    function undoLastPoint() {
+      if (!pts.length) return;
+      pts.pop();
+      redrawTemp();
+      updateInspectorCard();
+    }
+
+    function clearSelectedVertices() {
+      selectedVertexIndices = [];
+      renderEditHandles();
+      updateInspectorCard();
+    }
+
+    function deleteSelectedVertices() {
+      if (selected === null || !selectedVertexIndices.length) return;
+      requireEditUnlock(() => {
+        const f = features.find(x => x.id === selected);
+        if (!f) return;
+        const t = TYPES[f.type] || TYPES.parcel;
+        const minPts = t.poly ? 3 : 2;
+        const remainingCount = f.coords.length - selectedVertexIndices.length;
+        if (remainingCount < minPts) {
+          alert(`لا يمكن مسح كل هذه النقاط؛ الشكل يحتاج ${minPts} نقاط على الأقل (متبقي حالياً ${f.coords.length} نقطة).`);
+          return;
+        }
+        const sortedDesc = [...new Set(selectedVertexIndices)].sort((a, b) => b - a);
+        for (const idx of sortedDesc) {
+          if (idx >= 0 && idx < f.coords.length) {
+            f.coords.splice(idx, 1);
+          }
+        }
+        const removedCount = sortedDesc.length;
+        selectedVertexIndices = [];
+        renderAll();
+        renderEditHandles();
+        updateInspectorCard();
+        save();
+        setStatus(`🗑️ تم مسح <b>${removedCount} نقطة</b> من أضلاع الشكل بنجاح! (أصبح الشكل مكوناً من ${f.coords.length} نقطة).`);
+      });
+    }
+
+    document.addEventListener('keydown', e => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+      if (e.key === 'Enter' && mode === 'add' && pts.length) finishDraw();
+      else if (e.key === 'Escape') {
+        if (document.getElementById('quadCalcModalBackdrop')?.style.display === 'flex') closeQuadCalcModal();
+        else if (selectedVertexIndices.length) clearSelectedVertices();
+        else if (pts.length) cancelDraw();
+        else if (selectedIds.length > 0) deselect();
+      } else if (e.key === 'Backspace') {
+        if (mode === 'add' && pts.length) {
+          e.preventDefault();
+          undoLastPoint();
+        } else if (selected !== null && selectedVertexIndices.length > 0) {
+          e.preventDefault();
+          deleteSelectedVertices();
+        }
+      } else if (e.key === 'Delete') {
+        if (selected !== null && selectedVertexIndices.length > 0) {
+          e.preventDefault();
+          deleteSelectedVertices();
+        } else if (selected !== null) {
+          deleteSelected();
+        }
+      }
+    });
+
+    function finishDraw() {
+      if (mode !== 'add') return;
+      const t = TYPES[addType];
+      const clean = pts.filter((c, i) => i === 0 || c[0] !== pts[i - 1][0] || c[1] !== pts[i - 1][1]);
+      if ((t.poly && clean.length < 3) || (!t.poly && clean.length < 2)) {
+        setStatus('⚠️ عدد النقاط غير كافٍ لقفل الشكل (مطلوب ٣ نقاط على الأقل للمضلع).');
+        return;
+      }
+      const id = features.reduce((m, f) => Math.max(m, f.id), 0) + 1;
+      const sameType = features.filter(f => f.type === addType).length + 1;
+      const defaultName = `${t.name} ${sameType}`;
+      const newFeat = {
+        id,
+        type: draftMeta.type || addType,
+        name: (draftMeta.owner || '').trim() || defaultName,
+        owner: (draftMeta.owner || '').trim(),
+        code: (draftMeta.code || '').trim() || `HW-${String(id).padStart(3, '0')}`,
+        qiratSqm: normalizeQiratSqm(draftMeta.qiratSqm || 175),
+        areaMethod: 'geo',
+        basin: (draftMeta.basin || '').trim(),
+        status: draftMeta.status || 'ملك خاص',
+        crop: (draftMeta.crop || '').trim(),
+        phone: (draftMeta.phone || '').trim(),
+        color: draftMeta.color || t.color,
+        note: (draftMeta.note || '').trim(),
+        coords: clean,
+        created: new Date().toISOString()
+      };
+      features.push(newFeat);
+      pts = [];
+      drawLayer.clearLayers();
+      snapIndicatorLayer.clearLayers();
+      document.getElementById('drawActionsBar').style.display = 'none';
+
+      // Select the newly created feature so user can immediately review/edit its card or switch back to add
+      save();
+      setMode('select');
+      select(id);
+      setStatus(`✅ تم حفظ <b>${newFeat.name}</b> وتحديده — يمكنك تعديل بياناته في البطاقة على الشمال أو الضغط على «➕ إضافة / رسم» لرسم قطعة أخرى.`);
+    }
+
+    function cancelDraw() {
+      pts = [];
+      drawLayer.clearLayers();
+      snapIndicatorLayer.clearLayers();
+      document.getElementById('drawActionsBar').style.display = 'none';
+      const mobDraw = document.getElementById('mobileDrawBar');
+      if (mobDraw) mobDraw.style.display = 'none';
+      updateInspectorCard();
+    }
+
+    // ---------- Render Shapes, Select & Edit Vertices ----------
+    function toggleShapesVisibility() {
+      const showShapes = document.getElementById('chkShowShapes') ? document.getElementById('chkShowShapes').checked : true;
+      const mobBtn = document.getElementById('mobBtnShowShapes');
+      const mobTxt = document.getElementById('mobShowShapesTxt');
+      if (mobBtn && mobTxt) {
+        if (showShapes) {
+          mobBtn.className = 'mob-btn mob-btn-toggle active';
+          mobTxt.textContent = '👁️ الأراضي: ظاهرة';
+        } else {
+          mobBtn.className = 'mob-btn mob-btn-toggle inactive';
+          mobTxt.textContent = '👁️ الأراضي: مخفية';
+        }
+      }
+      if (showShapes) {
+        setStatus('🗺️ تم إظهار قطع الأراضي والحدود المرسومة على الخريطة.');
+      } else {
+        setStatus('👁️ تم إخفاء قطع الأراضي — يمكنك الآن فحص صور القمر الصناعي الطبيعية بحرية.');
+      }
+      renderAll();
+      renderEditHandles();
+    }
+
+    function renderAll() {
+      featLayer.clearLayers();
+      lblLayer.clearLayers();
+      const showShapes = document.getElementById('chkShowShapes') ? document.getElementById('chkShowShapes').checked : true;
+      if (!showShapes) {
+        renderGuidePoints();
+        renderList();
+        return;
+      }
+      const showL = document.getElementById('chkLabels').checked;
+
+      features.forEach(f => {
+        const t = TYPES[f.type] || TYPES.parcel;
+        const isSel = selectedIds.includes(f.id);
+        const col = f.color || t.color;
+        const style = {
+          color: isSel ? '#facc15' : col,
+          weight: isSel ? 3.5 : (t.poly ? 2 : 3.5),
+          fillColor: col,
+          fillOpacity: isSel ? 0.52 : 0.32,
+          // Clickable whenever we are in Select mode OR when not actively mid-drawing in Add mode!
+          interactive: (mode === 'select' || pts.length === 0)
+        };
+
+        const isClosedRibbon = (f.coords && f.coords.length >= 4 && !t.poly);
+        const shape = (t.poly || isClosedRibbon) ? L.polygon(f.coords, style) : L.polyline(f.coords, style);
+
+        shape.addTo(featLayer).on('click', ev => {
+          if (mode === 'add' && pts.length > 0) return; // let map click add vertex while mid-drawing
+          L.DomEvent.stopPropagation(ev);
+          const orig = ev.originalEvent || {};
+          const isCtrl = !!(orig.ctrlKey || orig.metaKey);
+          if (mode !== 'select') setMode('select');
+          select(f.id, false, isCtrl);
+        });
+
+        if (showL && map.getZoom() >= 16 && (t.poly || isSel)) {
+          const c = t.poly ? polygonCentroid(f.coords) : shape.getBounds().getCenter();
+          const dispName = f.owner ? `👤 ${f.owner}` : f.name;
+          let innerHtml = `<div class="lbl-name">${dispName}</div>`;
+          if (t.poly) {
+            const sqm = getFeatureArea(f);
+            const qSize = normalizeQiratSqm(f.qiratSqm || 175);
+            innerHtml += `<div class="lbl-sqm">${Math.round(sqm)} م²</div>`;
+            innerHtml += `<div class="lbl-fed">${feddanShort(sqm, qSize)}</div>`;
+          }
+          L.marker(c, {
+            interactive: false,
+            icon: L.divIcon({
+              className: '',
+              iconSize: [0, 0],
+              iconAnchor: [0, 0],
+              html: `<div class="lbl-anchor"><div class="lbl">${innerHtml}</div></div>`
+            })
+          }).addTo(lblLayer);
+        }
+      });
+
+      renderGuidePoints();
+      renderList();
+    }
+
+    map.on('zoomend', () => {
+      renderAll();
+    });
+
+    function select(id, fly = false, isMultiToggle = false) {
+      cancelDraw();
+      if (window.innerWidth <= 850) {
+        closeMobileList();
+      }
+      selectedVertexIndices = [];
+      if (isMultiToggle) {
+        const idx = selectedIds.indexOf(id);
+        if (idx >= 0) {
+          selectedIds.splice(idx, 1);
+        } else {
+          selectedIds.push(id);
+        }
+      } else {
+        selectedIds = [id];
+      }
+
+      selected = (selectedIds.length === 1) ? selectedIds[0] : null;
+      renderAll();
+      renderEditHandles();
+      updateInspectorCard();
+
+      if (selectedIds.length > 1) {
+        const selFeats = features.filter(x => selectedIds.includes(x.id));
+        const totalSqm = selFeats.reduce((s, x) => s + ((TYPES[x.type]?.poly !== false) ? getFeatureArea(x) : 0), 0);
+        setStatus(`📊 محدد حالياً <b>${selectedIds.length} قطع معاً</b> — مجموع المساحة: <b>${Math.round(totalSqm).toLocaleString('ar-EG')} م²</b> (${feddanText(totalSqm, 175)})`);
+        return;
+      }
+
+      const f = features.find(x => x.id === selected);
+      if (!f) {
+        deselect();
+        return;
+      }
+      if (fly) {
+        map.fitBounds(L.latLngBounds(f.coords), { padding: [90, 90], maxZoom: 19 });
+      }
+      setStatus(`✋ محدد حالياً: <b>${f.owner || f.name}</b> (${f.coords.length} نقطة) — اضغط على أي نقطة برتقالية على الضلع لتحديدها ثم <kbd>Backspace</kbd> لمسحها.`);
+    }
+
+    
+    // ================= GPS COORDINATES INSPECTOR & EXPORT =================
+    function copySinglePointCoord(lat, lng, pNum) {
+      const text = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      navigator.clipboard.writeText(text).then(() => {
+        setStatus(`✔ تم نسخ إحداثيات النقطة P${pNum} إلى الحافظة: <b>${text}</b>`);
+      }).catch(() => {
+        prompt('انسخ الإحداثي:', text);
+      });
+    }
+
+    function renderGpsCoordsTable(coords) {
+      if (!coords || coords.length === 0) return '';
+      let rowsHtml = '';
+      coords.forEach((c, idx) => {
+        const pNum = idx + 1;
+        const lat = Number(c[0]).toFixed(6);
+        const lng = Number(c[1]).toFixed(6);
+        rowsHtml += `
+          <tr>
+            <td><b style="color:#38bdf8">P${pNum}</b></td>
+            <td>${lat}°</td>
+            <td>${lng}°</td>
+            <td>
+              <button type="button" class="coords-copy-btn" onclick="copySinglePointCoord(${lat}, ${lng}, ${pNum})" title="نسخ">📋</button>
+              <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" class="coords-copy-btn" style="text-decoration:none;display:inline-block" title="فتح في Google Maps">🗺️</a>
+            </td>
+          </tr>
+        `;
+      });
+
+      return `
+        <div class="coords-table-box">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:12px;font-weight:700;color:#38bdf8">📍 إحداثيات أركان القطعة (GPS ${coords.length} نقاط):</span>
+            <span style="font-size:10.5px;color:#94a3b8">WGS84</span>
+          </div>
+          <div style="max-height:160px;overflow-y:auto">
+            <table class="coords-table">
+              <thead>
+                <tr>
+                  <th>نقطة</th>
+                  <th>خط العرض (N)</th>
+                  <th>خط الطول (E)</th>
+                  <th>إجراء</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+            </table>
+          </div>
+          <div class="coords-actions-bar">
+            <button type="button" class="btn-action-gps" onclick="copyAllParcelCoords()">
+              <span>📋</span><span>نسخ كل الإحداثيات</span>
+            </button>
+            <button type="button" class="btn-action-gps" onclick="exportCoordsCsv()">
+              <span>📥</span><span>تصدير CSV / TXT</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function copyAllParcelCoords() {
+      const f = features.find(x => x.id === selected);
+      if (!f || !f.coords || f.coords.length === 0) {
+        setStatus('⚠️ لا توجد قطعة محددة لنسخ إحداثياتها');
+        return;
+      }
+      let report = `إحداثيات قطعة الأرض: ${f.name || 'بدون اسم'}\n`;
+      if (f.owner) report += `المالك: ${f.owner}\n`;
+      if (f.basin) report += `الحوض: ${f.basin}\n`;
+      report += `عدد النقاط: ${f.coords.length}\n`;
+      report += `----------------------------------------\n`;
+      report += `النقطة\tخط العرض (Lat N)\tخط الطول (Lng E)\n`;
+      f.coords.forEach((c, i) => {
+        report += `P${i + 1}\t${Number(c[0]).toFixed(6)}\t${Number(c[1]).toFixed(6)}\n`;
+      });
+      navigator.clipboard.writeText(report).then(() => {
+        setStatus(`✔ تم نسخ جميع إحداثيات القطعة (${f.coords.length} نقاط) بتنسيق جدول جاهز للطباعة أو الإكسيل!`);
+      }).catch(() => {
+        prompt('انسخ الإحداثيات:', report);
+      });
+    }
+
+    function exportCoordsCsv() {
+      const f = features.find(x => x.id === selected);
+      if (!f || !f.coords || f.coords.length === 0) return;
+      let csv = `Point,Latitude,Longitude\n`;
+      f.coords.forEach((c, i) => {
+        csv += `P${i + 1},${Number(c[0]).toFixed(6)},${Number(c[1]).toFixed(6)}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `coordinates_parcel_${f.id}_${(f.name || 'land').replace(/\s+/g, '_')}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setStatus('✔ تم تنزيل ملف الإحداثيات بصيغة CSV بنجاح.');
+    }
+
+    function renderEditHandles() {
+      editLayer.clearLayers();
+      dimMapLayer.clearLayers();
+      const showShapes = document.getElementById('chkShowShapes') ? document.getElementById('chkShowShapes').checked : true;
+      if (!showShapes) return;
+      if (selectedIds.length !== 1) return;
+      const f = features.find(x => x.id === selected);
+      if (!f) return;
+
+      const t = TYPES[f.type] || TYPES.parcel;
+      // Show edge lengths on map for selected polygon
+      if (t.poly && f.coords.length >= 3) {
+        const sides = computeCardinalSides(f.coords);
+        sides.edges.forEach(edge => {
+          L.marker(edge.mid, {
+            interactive: false,
+            icon: L.divIcon({
+              className: '',
+              iconSize: [0, 0],
+              iconAnchor: [0, 0],
+              html: `<div class="lbl-anchor"><div class="dim-lbl">${edge.len.toFixed(1)} م</div></div>`
+            })
+          }).addTo(dimMapLayer);
+        });
+      }
+
+      // 1. Vertex handles on selected shape (Click to select 1 or more points & press Backspace to delete!)
+      f.coords.forEach((c, i) => {
+        const isVtxSel = selectedVertexIndices.includes(i);
+        const m = L.marker(c, {
+          draggable: editUnlocked,
+          title: 'اضغط لتحديد النقطة ثم Backspace لمسحها (أو اسحب لتحريكها)',
+          icon: L.divIcon({ className: 'vh' + (isVtxSel ? ' vh-selected' : '') })
+        }).addTo(editLayer);
+
+        m.on('click', ev => {
+          L.DomEvent.stopPropagation(ev);
+          const pos = selectedVertexIndices.indexOf(i);
+          if (pos >= 0) {
+            selectedVertexIndices.splice(pos, 1);
+          } else {
+            selectedVertexIndices.push(i);
+          }
+          renderEditHandles();
+          updateInspectorCard();
+          if (selectedVertexIndices.length > 0) {
+            setStatus(`🔴 تم تحديد <b>${selectedVertexIndices.length} نقطة</b> من أضلاع الشكل — اضغط زرار <kbd>Backspace</kbd> لمسحها، أو اضغط على نقاط أخرى لتحديدها معها.`);
+          } else {
+            setStatus(`✋ محدد حالياً: <b>${f.owner || f.name}</b> (${f.coords.length} نقطة).`);
+          }
+        });
+
+        m.on('drag', ev => {
+          if (!editUnlocked) return;
+          const p = ev.target.getLatLng();
+          const snapped = snapPoint(p, f, i);
+          f.coords[i] = snapped;
+          renderAll();
+          updateInspectorCard();
+        });
+
+        m.on('dragend', ev => {
+          if (!editUnlocked) return;
+          snapIndicatorLayer.clearLayers();
+          const snapped = snapPoint(ev.target.getLatLng(), f, i);
+          f.coords[i] = snapped;
+          ev.target.setLatLng(snapped);
+          renderAll();
+          renderEditHandles();
+          updateInspectorCard();
+          save();
+        });
+
+        m.on('contextmenu', ev => {
+          L.DomEvent.stopPropagation(ev);
+          requireEditUnlock(() => {
+            const minPts = t.poly ? 3 : 2;
+            if (f.coords.length <= minPts) {
+              alert(`لا يمكن حذف النقطة؛ الشكل يحتاج ${minPts} نقاط على الأقل.`);
+              return;
+            }
+            f.coords.splice(i, 1);
+            selectedVertexIndices = [];
+            renderAll();
+            renderEditHandles();
+            updateInspectorCard();
+            save();
+          });
+        });
+      });
+
+      // Only show midpoint addition handles when editing is unlocked
+      if (!editUnlocked) return;
+
+      // 2. Blue midpoint handles on each edge (Drag to insert a new vertex on the boundary!)
+      const n = f.coords.length;
+      const limit = t.poly ? n : n - 1;
+      for (let i = 0; i < limit; i++) {
+        const p1 = f.coords[i];
+        const p2 = f.coords[(i + 1) % n];
+        const mid = [+( (p1[0] + p2[0]) / 2 ).toFixed(7), +( (p1[1] + p2[1]) / 2 ).toFixed(7)];
+        const midMarker = L.marker(mid, {
+          draggable: true,
+          title: 'اسحب لإضافة نقطة زاوية جديدة هنا',
+          icon: L.divIcon({ className: 'vh-mid' })
+        }).addTo(editLayer);
+
+        midMarker.on('dragend', ev => {
+          const snapped = snapPoint(ev.target.getLatLng(), f, -1);
+          snapIndicatorLayer.clearLayers();
+          f.coords.splice(i + 1, 0, snapped);
+          selectedVertexIndices = [];
+          renderAll();
+          renderEditHandles();
+          updateInspectorCard();
+          save();
+        });
+      }
+    }
+
+    function deselect() {
+      selected = null;
+      selectedIds = [];
+      selectedVertexIndices = [];
+      editLayer.clearLayers();
+      dimMapLayer.clearLayers();
+      snapIndicatorLayer.clearLayers();
+      renderAll();
+      updateInspectorCard();
+      setStatus('اضغط على أي قطعة أرض لعرضها، أو اضغط <kbd>Ctrl</kbd> مع الماوس لتحديد عدة قطع معاً وحساب مجموع مساحتهم.');
+    }
+
+    // ---------- Left Top: Drawn Shapes List ----------
+    function renderList() {
+      const box = document.getElementById('list');
+      box.innerHTML = '';
+      document.getElementById('cnt').textContent = features.length;
+      const mobCnt = document.getElementById('mobCnt');
+      if (mobCnt) mobCnt.textContent = features.length;
+
+      const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+      const tf = document.getElementById('typeFilter').value;
+
+      const filtered = [...features].reverse().filter(f => {
+        if (tf !== 'ALL' && f.type !== tf) return false;
+        if (q) {
+          const hay = `${f.id} ${f.name || ''} ${f.owner || ''} ${f.code || ''} ${f.basin || ''} ${f.crop || ''} ${f.note || ''}`.toLowerCase();
+          return hay.includes(q);
+        }
+        return true;
+      });
+
+      filtered.forEach(f => {
+        const t = TYPES[f.type] || TYPES.parcel;
+        const d = document.createElement('div');
+        d.className = 'item' + (selectedIds.includes(f.id) ? ' sel' : '');
+        d.style.borderRightColor = f.color || t.color;
+
+        const qSize = normalizeQiratSqm(f.qiratSqm || 175);
+        const fSqm = getFeatureArea(f);
+        const meas = t.poly
+          ? `${Math.round(fSqm).toLocaleString('ar-EG')} م² (${feddanShort(fSqm, qSize)})`
+          : `الطول: ${lineLen(f.coords).toFixed(1)} م`;
+
+        const titleText = f.owner ? `👤 ${f.owner} (${f.name})` : f.name;
+
+        d.innerHTML = `
+          <div class="item-top">
+            <span>#${f.id} — ${titleText}</span>
+            <span style="font-size:11px;color:#cbd5e1;background:#0f172a;padding:1px 6px;border-radius:5px">${t.name}</span>
+          </div>
+          <div class="item-sub">
+            <span style="color:#34d399;font-weight:700">${meas}</span>
+            <span>${f.basin || f.note || ''}</span>
+          </div>
+        `;
+        d.onclick = ev => {
+          const isCtrl = !!(ev.ctrlKey || ev.metaKey);
+          if (mode !== 'select') setMode('select');
+          select(f.id, !isCtrl, isCtrl);
+        };
+        box.appendChild(d);
+      });
+    }
+
+    // ---------- Left Bottom: Inspector & Editor Card ----------
+    function renderColorSwatches(activeColor) {
+      const box = document.getElementById('colorSwatches');
+      box.innerHTML = '';
+      SWATCH_COLORS.forEach(c => {
+        const s = document.createElement('div');
+        s.className = 'swatch' + (c === activeColor ? ' active' : '');
+        s.style.background = c;
+        s.onclick = () => {
+          requireEditUnlock(() => {
+            if (selected !== null) {
+              const f = features.find(x => x.id === selected);
+              if (f) {
+                f.color = c;
+                renderColorSwatches(c);
+                renderAll();
+                save();
+              }
+            } else if (mode === 'add') {
+              draftMeta.color = c;
+              renderColorSwatches(c);
+              redrawTemp();
+            }
+          });
+        };
+        box.appendChild(s);
+      });
+    }
+
+    function setMultiQirat(val) {
+      const inp = document.getElementById('inpMultiQiratSqm');
+      if (inp) {
+        inp.value = val;
+        updateInspectorCard();
+      }
+    }
+
+    function removeFromMultiSelect(id) {
+      selectedIds = selectedIds.filter(x => x !== id);
+      selected = (selectedIds.length === 1) ? selectedIds[0] : null;
+      renderAll();
+      renderEditHandles();
+      updateInspectorCard();
+    }
+
+    function zoomToMultiSelected() {
+      const selFeats = features.filter(x => selectedIds.includes(x.id));
+      const allCoords = selFeats.flatMap(x => x.coords || []);
+      if (allCoords.length) {
+        map.fitBounds(L.latLngBounds(allCoords), { padding: [70, 70], maxZoom: 19 });
+      }
+    }
+
+    function updateInspectorCard(liveCoords = null) {
+      const emptyBox = document.getElementById('cardEmptyState');
+      const multiBody = document.getElementById('cardMultiBody');
+      const formBody = document.getElementById('cardFormBody');
+      const footerBar = document.getElementById('cardFooterBar');
+      const badge = document.getElementById('cardBadge');
+      const headerTitle = document.getElementById('cardHeaderTitle');
+      const btnDel = document.getElementById('btnDeleteSelected');
+
+      // Case 1: Multiple shapes selected via Ctrl+Click (2 or more)
+      if (selectedIds.length > 1) {
+        emptyBox.style.display = 'none';
+        formBody.style.display = 'none';
+        footerBar.style.display = 'none';
+        multiBody.style.display = 'flex';
+
+        const selFeats = selectedIds.map(id => features.find(x => x.id === id)).filter(Boolean);
+        headerTitle.textContent = `📊 مجموع القطع المحددة (${selFeats.length})`;
+        badge.textContent = `${selFeats.length} قطع مختارة`;
+
+        const multiQirat = normalizeQiratSqm(document.getElementById('inpMultiQiratSqm')?.value || 175);
+        let totalSqm = 0;
+        const chipsBox = document.getElementById('multiChipsBox');
+        const tableBox = document.getElementById('multiTableBox');
+        chipsBox.innerHTML = '';
+        tableBox.innerHTML = '';
+
+        selFeats.forEach(item => {
+          const itType = TYPES[item.type] || TYPES.parcel;
+          const itemSqm = itType.poly ? getFeatureArea(item) : 0;
+          totalSqm += itemSqm;
+          const dispName = item.owner ? item.owner : item.name;
+          const itemQSize = normalizeQiratSqm(item.qiratSqm || multiQirat);
+
+          // Chip side by side
+          const chip = document.createElement('div');
+          chip.className = 'multi-chip';
+          chip.style.borderColor = item.color || itType.color;
+          chip.innerHTML = `
+            <span>👤 ${dispName}</span>
+            <span class="chip-area">(${Math.round(itemSqm)} م²)</span>
+            <span class="chip-remove" title="إزالة من التحديد" onclick="removeFromMultiSelect(${item.id})">✖</span>
+          `;
+          chipsBox.appendChild(chip);
+
+          // Detailed row
+          const row = document.createElement('div');
+          row.className = 'multi-row';
+          row.style.borderRightColor = item.color || itType.color;
+          row.innerHTML = `
+            <div>
+              <strong style="color:#fff">#${item.id} — ${dispName}</strong>
+              <div style="font-size:10.5px;color:#94a3b8">${item.basin || itType.name}</div>
+            </div>
+            <div style="text-align:left">
+              <div style="color:#facc15;font-weight:800">${Math.round(itemSqm).toLocaleString('ar-EG')} م²</div>
+              <div style="color:#6ee7b7;font-size:10.5px;font-weight:700">${feddanShort(itemSqm, itemQSize)}</div>
+            </div>
+          `;
+          row.onclick = () => select(item.id, true, false);
+          tableBox.appendChild(row);
+        });
+
+        const parts = computeFeddanParts(totalSqm, multiQirat);
+        document.getElementById('multiCountNum').textContent = selFeats.length;
+        document.getElementById('multiTotalFaddan').textContent = feddanText(totalSqm, multiQirat);
+        document.getElementById('multiTotalSqm').textContent = `${Math.round(totalSqm).toLocaleString('ar-EG')} م²`;
+        document.getElementById('multiQiratEquation').textContent = `المجموع: ${Math.round(totalSqm)} م² ÷ ${multiQirat} م² = ${parts.totalQirats.toFixed(2)} قيراط`;
+        document.getElementById('multiTotalQirats').textContent = `إجمالي: ${parts.totalQirats.toFixed(2)} قيراط`;
+        return;
+      }
+
+      multiBody.style.display = 'none';
+      const f = (selected !== null) ? features.find(x => x.id === selected) : null;
+
+      if (!f && mode !== 'add') {
+        emptyBox.style.display = 'block';
+        formBody.style.display = 'none';
+        footerBar.style.display = 'none';
+        badge.textContent = 'غير محدد';
+        headerTitle.textContent = '🗂️ بطاقة بيانات قطعة الأرض / الشكل';
+        return;
+      }
+
+      emptyBox.style.display = 'none';
+      formBody.style.display = 'flex';
+      footerBar.style.display = 'flex';
+
+      const target = f || draftMeta;
+      const coords = liveCoords || (f ? f.coords : pts);
+      const ftype = target.type || addType;
+      const t = TYPES[ftype] || TYPES.parcel;
+
+      if (f) {
+        headerTitle.textContent = `🗂️ بطاقة بيانات الشكل #${f.id}`;
+        badge.textContent = editUnlocked ? `تعديل: ${f.owner || f.name}` : `عرض: ${f.owner || f.name}`;
+        btnDel.style.display = 'inline-flex';
+      } else {
+        headerTitle.textContent = `➕ بطاقة الشكل الجديد (${t.name})`;
+        badge.textContent = `جاري الرسم (${coords.length} نقطة)`;
+        btnDel.style.display = 'none';
+      }
+
+      // Show or hide the selected-vertices deletion bar
+      const vtxBar = document.getElementById('vertexDeleteBar');
+      const vtxTxt = document.getElementById('vertexDeleteText');
+      if (vtxBar && vtxTxt) {
+        if (f && selectedVertexIndices.length > 0) {
+          vtxBar.style.display = 'flex';
+          vtxTxt.textContent = `🔴 محدد ${selectedVertexIndices.length} نقطة من الأضلاع (من أصل ${f.coords.length})`;
+        } else {
+          vtxBar.style.display = 'none';
+        }
+      }
+
+      // Compute Area / Length & 4 Sides
+      const qSize = normalizeQiratSqm(target.qiratSqm || 175);
+      const qBox = document.getElementById('qiratCalcBox');
+      const editUrfiContainer = document.getElementById('editModeUrfiContainer');
+      const urfiDetailsBox = document.getElementById('urfiEditDetailsBox');
+      const btnToggleUrfi = document.getElementById('btnToggleUrfiView');
+
+      if (t.poly) {
+        if (qBox) qBox.style.display = 'flex';
+        const sides = computeCardinalSides(coords);
+        const avgNS = (sides.north + sides.south) / 2;
+        const avgEW = (sides.east + sides.west) / 2;
+        const sqm = area(coords); // Always standard Geometric Area!
+        const parts = computeFeddanParts(sqm, qSize);
+
+        // Show Customary Area button ONLY when in Edit Mode (editUnlocked === true)
+        if (editUrfiContainer) {
+          editUrfiContainer.style.display = editUnlocked ? 'flex' : 'none';
+        }
+        if (editUnlocked && urfiDetailsBox && btnToggleUrfi) {
+          urfiDetailsBox.style.display = showUrfiInEditMode ? 'block' : 'none';
+          btnToggleUrfi.innerHTML = showUrfiInEditMode
+            ? '🔼 إخفاء المساحة العُرفية'
+            : '📏 إظهار المساحة العُرفية (في وضع التعديل)';
+          const uSqm = urfiArea(coords);
+          const formulaEl = document.getElementById('infoUrfiFormula');
+          if (formulaEl) {
+            formulaEl.innerHTML = `📐 <b>المساحة العُرفية (متوسط الأضلاع):</b> <b style="color:#facc15">${Math.round(uSqm).toLocaleString('ar-EG')} م²</b> (${feddanText(uSqm, qSize)})<br/>` +
+              `<span style="color:#cbd5e1;font-size:10px">الحسبة: متوسط بحري/قبلي (${avgNS.toFixed(1)} م) × متوسط شرقي/غربي (${avgEW.toFixed(1)} م) — عدد نقاط الشكل: ${coords.length}</span>`;
+          }
+        }
+
+        document.getElementById('infoFaddan').textContent = feddanText(sqm, qSize);
+        document.getElementById('infoSqm').textContent = `${Math.round(sqm).toLocaleString('ar-EG')} م²`;
+        document.getElementById('infoQiratEquation').textContent = `الحسبة: ${Math.round(sqm)} م² ÷ ${qSize} م² = ${parts.totalQirats.toFixed(2)} قيراط`;
+        document.getElementById('infoTotalQirats').textContent = `إجمالي: ${parts.totalQirats.toFixed(2)} قيراط`;
+        document.getElementById('dimNorth').textContent = `${sides.north.toFixed(1)} م`;
+        document.getElementById('dimSouth').textContent = `${sides.south.toFixed(1)} م`;
+        document.getElementById('dimEast').textContent = `${sides.east.toFixed(1)} م`;
+        document.getElementById('dimWest').textContent = `${sides.west.toFixed(1)} م`;
+      } else {
+        if (qBox) qBox.style.display = 'none';
+        const len = lineLen(coords);
+        document.getElementById('infoFaddan').textContent = `طول المسار: ${len.toFixed(1)} متر`;
+        document.getElementById('infoSqm').textContent = `${coords.length} نقطة`;
+        document.getElementById('dimNorth').textContent = '-';
+        document.getElementById('dimSouth').textContent = '-';
+        document.getElementById('dimEast').textContent = '-';
+        document.getElementById('dimWest').textContent = '-';
+      }
+
+      // Populate Inputs (only if not currently focused so we don't interrupt typing)
+      const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el && document.activeElement !== el) el.value = val ?? '';
+      };
+
+      setVal('inpQiratSqm', qSize);
+      setVal('inpOwner', f ? (f.owner || f.name || '') : (draftMeta.owner || ''));
+      setVal('inpCode', f ? (f.code || `HW-${String(f.id).padStart(3, '0')}`) : (draftMeta.code || ''));
+      setVal('inpType', ftype);
+      setVal('inpBasin', target.basin || '');
+      setVal('inpStatus', target.status || 'ملك خاص');
+      setVal('inpCrop', target.crop || '');
+      setVal('inpPhone', target.phone || '');
+      setVal('inpNote', target.note || '');
+
+      renderColorSwatches(target.color || t.color);
+    }
+
+    // ---------- Quadrilateral Area Calculator Modal Functions ----------
+    function fmtQuad(n) {
+      return Number(n.toFixed(2)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function toSquareMetersQuad(val, unit) {
+      if (unit === 'سم') return val / 10000;
+      if (unit === 'مم') return val / 1000000;
+      if (unit === 'قدم') return val * 0.09290304;
+      return val;
+    }
+
+    function openQuadCalcModal() {
+      const modal = document.getElementById('quadCalcModalBackdrop');
+      if (!modal) return;
+      modal.style.display = 'flex';
+      calculateQuadModal();
+      updateModalStdScreen();
+    }
+
+    function closeQuadCalcModal() {
+      const modal = document.getElementById('quadCalcModalBackdrop');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function fillQuadFromSelected(silent = false) {
+      const f = (selected !== null) ? features.find(x => x.id === selected) : null;
+      if (!f || !f.coords || f.coords.length < 3) {
+        if (!silent) alert('يرجى تحديد قطعة أرض على الخريطة أولاً لسحب أطوال أضلاعها الأربعة.');
+        calculateQuadModal();
+        return;
+      }
+      const sides = computeCardinalSides(f.coords);
+      document.getElementById('quadSideA').value = sides.north.toFixed(2);
+      document.getElementById('quadSideB').value = sides.east.toFixed(2);
+      document.getElementById('quadSideC').value = sides.south.toFixed(2);
+      document.getElementById('quadSideD').value = sides.west.toFixed(2);
+      document.getElementById('quadKiratSize').value = normalizeQiratSqm(f.qiratSqm || 175);
+      document.getElementById('quadUnitSelect').value = 'م';
+      calculateQuadModal();
+    }
+
+    let lastModalQuadAreaM2 = 0;
+
+    function calculateQuadModal() {
+      const a = parseFloat(document.getElementById('quadSideA').value);
+      const b = parseFloat(document.getElementById('quadSideB').value);
+      const c = parseFloat(document.getElementById('quadSideC').value);
+      const d = parseFloat(document.getElementById('quadSideD').value);
+      const kiratAreaInput = parseFloat(document.getElementById('quadKiratSize').value);
+      const kiratSize = (kiratAreaInput && kiratAreaInput > 0) ? kiratAreaInput : 175;
+      const unit = document.getElementById('quadUnitSelect').value;
+      const unitSq = unit + '²';
+
+      const errorBox = document.getElementById('quadErrorBox');
+      const avgEl = document.getElementById('quadAvgArea');
+      const perimEl = document.getElementById('quadPerimeterVal');
+      const formulaNote = document.getElementById('quadFormulaNote');
+      const feddanEl = document.getElementById('quadFeddanVal');
+      const kiratEl = document.getElementById('quadKiratVal');
+      const sahmEl = document.getElementById('quadSahmVal');
+      const totalKiratsNote = document.getElementById('quadTotalKiratsNote');
+
+      errorBox.style.display = 'none';
+
+      if (!a || !b || !c || !d || a <= 0 || b <= 0 || c <= 0 || d <= 0) {
+        errorBox.textContent = 'يرجى إدخال أطوال موجبة لجميع الأضلاع الأربعة.';
+        errorBox.style.display = 'block';
+        avgEl.textContent = '--';
+        perimEl.textContent = '--';
+        formulaNote.textContent = '--';
+        feddanEl.textContent = '--';
+        kiratEl.textContent = '--';
+        sahmEl.textContent = '--';
+        totalKiratsNote.textContent = '--';
+        lastModalQuadAreaM2 = 0;
+        return;
+      }
+
+      const perimeter = a + b + c + d;
+      const avg1 = (a + c) / 2;
+      const avg2 = (b + d) / 2;
+      const avgArea = avg1 * avg2;
+
+      avgEl.textContent = fmtQuad(avgArea) + ' ' + unitSq;
+      perimEl.textContent = fmtQuad(perimeter) + ' ' + unit;
+      formulaNote.textContent = '(' + fmtQuad(avg1) + ' × ' + fmtQuad(avg2) + ')';
+
+      const areaM2 = toSquareMetersQuad(avgArea, unit);
+      lastModalQuadAreaM2 = Number(areaM2.toFixed(2));
+      const totalKirats = areaM2 / kiratSize;
+      let feddans = Math.floor(totalKirats / 24 + 1e-9);
+      let remKirats = Math.max(0, totalKirats - feddans * 24);
+      let kirats = Math.floor(remKirats + 1e-9);
+      let sahms = Math.max(0, (remKirats - kirats) * 24);
+
+      if (sahms >= 23.995) {
+        sahms = 0;
+        kirats += 1;
+      }
+      if (kirats >= 24) {
+        kirats -= 24;
+        feddans += 1;
+      }
+
+      feddanEl.textContent = feddans;
+      kiratEl.textContent = kirats;
+      sahmEl.textContent = fmtQuad(sahms);
+      totalKiratsNote.textContent = 'إجمالي: ' + fmtQuad(totalKirats) + ' قيراط (القيراط = ' + kiratSize + ' م²)';
+
+      const usedDiag = Math.sqrt(((a * c + b * d) * (a * d + b * c)) / (a * b + c * d));
+      drawQuadCanvas(a, b, c, d, usedDiag);
+      updateModalStdFksBar();
+    }
+
+    function drawQuadCanvas(a, b, c, d, diag) {
+      const canvas = document.getElementById('quadCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (!diag || isNaN(diag)) return;
+
+      const cosP3 = (c * c + d * d - diag * diag) / (2 * c * d);
+      const clampedCosP3 = Math.max(-0.95, Math.min(0.95, cosP3));
+      const sinP3 = Math.sqrt(1 - clampedCosP3 * clampedCosP3);
+
+      const P3 = { x: 0, y: 0 };
+      const P2 = { x: c, y: 0 };
+      const P0 = { x: d * clampedCosP3, y: d * sinP3 };
+
+      const dx = P2.x - P0.x;
+      const dy = P2.y - P0.y;
+      const distVal = Math.hypot(dx, dy) || 1;
+      const cosAlpha = Math.max(-0.95, Math.min(0.95, (a * a + distVal * distVal - b * b) / (2 * a * distVal)));
+      const sinAlpha = Math.sqrt(1 - cosAlpha * cosAlpha);
+
+      const ux = dx / distVal;
+      const uy = dy / distVal;
+      const px = -uy;
+      const py = ux;
+
+      const P1 = {
+        x: P0.x + a * (ux * cosAlpha + px * sinAlpha),
+        y: P0.y + a * (uy * cosAlpha + py * sinAlpha)
+      };
+
+      const qPts = [P0, P1, P2, P3];
+      const minX = Math.min(...qPts.map(p => p.x));
+      const maxX = Math.max(...qPts.map(p => p.x));
+      const minY = Math.min(...qPts.map(p => p.y));
+      const maxY = Math.max(...qPts.map(p => p.y));
+
+      const w = maxX - minX || 1;
+      const h = maxY - minY || 1;
+      const pad = 34;
+      const scale = Math.min((canvas.width - pad * 2) / w, (canvas.height - pad * 2) / h);
+
+      const toScreen = (p) => ({
+        x: (canvas.width - w * scale) / 2 + (p.x - minX) * scale,
+        y: canvas.height - ((canvas.height - h * scale) / 2 + (p.y - minY) * scale)
+      });
+
+      const sPts = qPts.map(toScreen);
+
+      ctx.beginPath();
+      ctx.moveTo(sPts[0].x, sPts[0].y);
+      ctx.lineTo(sPts[1].x, sPts[1].y);
+      ctx.lineTo(sPts[2].x, sPts[2].y);
+      ctx.lineTo(sPts[3].x, sPts[3].y);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(59, 130, 246, 0.18)';
+      ctx.fill();
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = '#3b82f6';
+      ctx.stroke();
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 12px Cairo, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      const labels = ['أ (' + a + ')', 'ب (' + b + ')', 'ج (' + c + ')', 'د (' + d + ')'];
+      const cx = sPts.reduce((acc, p) => acc + p.x, 0) / 4;
+      const cy = sPts.reduce((acc, p) => acc + p.y, 0) / 4;
+
+      for (let i = 0; i < 4; i++) {
+        const pA = sPts[i];
+        const pB = sPts[(i + 1) % 4];
+        const mx = (pA.x + pB.x) / 2;
+        const my = (pA.y + pB.y) / 2;
+        const vx = mx - cx;
+        const vy = my - cy;
+        const vlen = Math.hypot(vx, vy) || 1;
+        ctx.fillText(labels[i], mx + (vx / vlen) * 18, my + (vy / vlen) * 15);
+
+        ctx.beginPath();
+        ctx.arc(pA.x, pA.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#3b82f6';
+        ctx.fill();
+        ctx.fillStyle = '#f8fafc';
+      }
+    }
+
+    // ================= MODAL STANDARD CALCULATOR LOGIC =================
+    let modalStdCurrent = '0';
+    let modalStdJustEvaluated = false;
+
+    function updateModalStdScreen() {
+      const disp = document.getElementById('modalStdDisplay');
+      if (!disp) return;
+      const pretty = modalStdCurrent
+        .replace(/\*/g, ' × ')
+        .replace(/\//g, ' ÷ ')
+        .replace(/\+/g, ' + ')
+        .replace(/\-/g, ' − ');
+      disp.textContent = pretty || '0';
+      updateModalStdFksBar();
+    }
+
+    function updateModalStdFksBar() {
+      const fksEl = document.getElementById('modalStdFksResult');
+      if (!fksEl) return;
+      let numericVal = 0;
+      try {
+        const sanitized = modalStdCurrent.replace(/[^0-9+\-*/.%()]/g, '');
+        if (sanitized) {
+          const v = Function('"use strict"; return (' + sanitized + ')')();
+          if (typeof v === 'number' && isFinite(v) && v > 0) numericVal = v;
+        }
+      } catch (_) {}
+      const kiratAreaInput = parseFloat(document.getElementById('quadKiratSize')?.value);
+      const kiratSize = (kiratAreaInput && kiratAreaInput > 0) ? kiratAreaInput : 175;
+      const parts = computeFeddanParts(numericVal, kiratSize);
+      fksEl.textContent = `${parts.f} ف ، ${parts.q} ط ، ${parts.s.toFixed(2)} س`;
+    }
+
+    function modalStdAppend(ch) {
+      const isOp = ['+', '-', '*', '/', '%'].includes(ch);
+      if (modalStdJustEvaluated) {
+        if (isOp) {
+          modalStdJustEvaluated = false;
+        } else {
+          modalStdCurrent = '';
+          modalStdJustEvaluated = false;
+        }
+      }
+      if (modalStdCurrent === '0' && !isOp && ch !== '.') {
+        modalStdCurrent = ch;
+      } else {
+        modalStdCurrent += ch;
+      }
+      updateModalStdScreen();
+    }
+
+    function modalStdClear() {
+      modalStdCurrent = '0';
+      modalStdJustEvaluated = false;
+      const expr = document.getElementById('modalStdExpr');
+      if (expr) expr.textContent = '';
+      updateModalStdScreen();
+    }
+
+    function modalStdBackspace() {
+      if (modalStdJustEvaluated) {
+        modalStdClear();
+        return;
+      }
+      modalStdCurrent = modalStdCurrent.slice(0, -1) || '0';
+      updateModalStdScreen();
+    }
+
+    function modalStdEvaluate() {
+      try {
+        const sanitized = modalStdCurrent.replace(/[^0-9+\-*/.%()]/g, '');
+        if (!sanitized) return;
+        const res = Function('"use strict"; return (' + sanitized + ')')();
+        if (typeof res === 'number' && isFinite(res)) {
+          const expr = document.getElementById('modalStdExpr');
+          if (expr) {
+            expr.textContent = modalStdCurrent
+              .replace(/\*/g, ' × ')
+              .replace(/\//g, ' ÷ ')
+              .replace(/\+/g, ' + ')
+              .replace(/\-/g, ' − ') + ' =';
+          }
+          modalStdCurrent = String(Number(res.toFixed(4)));
+          modalStdJustEvaluated = true;
+          updateModalStdScreen();
+        }
+      } catch (_) {
+        const expr = document.getElementById('modalStdExpr');
+        if (expr) expr.textContent = 'خطأ في العملية';
+      }
+    }
+
+    function addModalQuadAreaToStdCalc() {
+      if (!lastModalQuadAreaM2 || lastModalQuadAreaM2 <= 0) return;
+      if (modalStdCurrent === '0') {
+        modalStdCurrent = String(lastModalQuadAreaM2);
+        modalStdJustEvaluated = false;
+      } else {
+        const lastChar = modalStdCurrent.slice(-1);
+        if (['+', '-', '*', '/'].includes(lastChar)) {
+          modalStdCurrent += String(lastModalQuadAreaM2);
+        } else {
+          modalStdCurrent += '+' + String(lastModalQuadAreaM2);
+        }
+        modalStdJustEvaluated = false;
+        modalStdEvaluate();
+        return;
+      }
+      updateModalStdScreen();
+    }
+
+    function onCardFieldChange() {
+      if (!editUnlocked) {
+        requireEditUnlock(() => onCardFieldChange());
+        updateInspectorCard();
+        return;
+      }
+      const qiratVal = normalizeQiratSqm(document.getElementById('inpQiratSqm').value);
+      const ownerVal = document.getElementById('inpOwner').value;
+      const codeVal = document.getElementById('inpCode').value;
+      const typeVal = document.getElementById('inpType').value;
+      const basinVal = document.getElementById('inpBasin').value;
+      const statusVal = document.getElementById('inpStatus').value;
+      const cropVal = document.getElementById('inpCrop').value;
+      const phoneVal = document.getElementById('inpPhone').value;
+      const noteVal = document.getElementById('inpNote').value;
+
+      if (selected !== null) {
+        const f = features.find(x => x.id === selected);
+        if (!f) return;
+        f.qiratSqm = qiratVal;
+        f.owner = ownerVal;
+        if (ownerVal.trim()) f.name = ownerVal.trim();
+        f.code = codeVal;
+        if (f.type !== typeVal) {
+          f.type = typeVal;
+          f.color = TYPES[typeVal]?.color || f.color;
+        }
+        f.basin = basinVal;
+        f.status = statusVal;
+        f.crop = cropVal;
+        f.phone = phoneVal;
+        f.note = noteVal;
+        updateInspectorCard();
+        renderAll();
+        save();
+      } else if (mode === 'add') {
+        draftMeta.qiratSqm = qiratVal;
+        draftMeta.owner = ownerVal;
+        draftMeta.code = codeVal;
+        draftMeta.type = typeVal;
+        addType = typeVal;
+        renderToolButtons();
+        draftMeta.basin = basinVal;
+        draftMeta.status = statusVal;
+        draftMeta.crop = cropVal;
+        draftMeta.phone = phoneVal;
+        draftMeta.note = noteVal;
+        updateInspectorCard();
+      }
+    }
+
+    function saveCardExplicit() {
+      if (!editUnlocked) {
+        requireEditUnlock(() => saveCardExplicit());
+        return;
+      }
+      onCardFieldChange();
+      if (mode === 'add' && pts.length >= 3) {
+        finishDraw();
+        return;
+      }
+      save();
+      flashSaved();
+    }
+
+    function zoomToSelected() {
+      const f = features.find(x => x.id === selected);
+      if (f && f.coords.length) {
+        map.fitBounds(L.latLngBounds(f.coords), { padding: [70, 70], maxZoom: 19 });
+      }
+    }
+
+    function deleteSelected() {
+      if (selected === null) return;
+      if (!editUnlocked) {
+        requireEditUnlock(() => deleteSelected());
+        return;
+      }
+      const f = features.find(x => x.id === selected);
+      if (!f || !confirm(`هل أنت متأكد من حذف "${f.owner || f.name}"؟`)) return;
+      features = features.filter(x => x.id !== selected);
+      deselect();
+      save();
+    }
+
+    // ---------- Save / Load / Export / Import (Local + Live Cloud Sync) ----------
+    const CLOUD_SYNC_TOPIC = 'survey_spatial_2026_new_v1';
+
+    function save() {
+      if (!editUnlocked) return;
+      localStorage.setItem('SURVEY_CAD_FEATURES_V1', JSON.stringify(features));
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        const payloadStr = JSON.stringify({ pin: EDIT_PIN, pins: PINS, savedAt: new Date().toISOString(), features });
+
+        // 1. Save to local/Netlify server API
+        fetch('/api/teach', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Edit-Pin': EDIT_PIN
+          },
+          body: payloadStr
+        })
+          .then(r => { if (r.ok) flashSaved(); })
+          .catch(() => {});
+
+        // 2. Also sync to live Cloud Channel so any user on the internet sees the latest edits immediately!
+        fetch(`https://ntfy.sh/${CLOUD_SYNC_TOPIC}`, {
+          method: 'PUT',
+          headers: { 'Filename': 'user_teaching.json' },
+          body: payloadStr
+        })
+          .then(r => { if (r.ok) flashSaved(); })
+          .catch(() => {});
+      }, 450);
+    }
+
+    function flashSaved() {
+      const s = document.getElementById('status');
+      if (!s.innerHTML.includes('اتحفظ')) {
+        s.innerHTML += ' &nbsp;<span class="saved">✔ اتحفظ تلقائياً</span>';
+      }
+    }
+
+    function exportJSON() {
+      const a = document.createElement('a');
+      a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify({ pins: PINS, features }, null, 2));
+      a.download = 'survey_parcels_data.json';
+      a.click();
+    }
+
+    function importJSON(ev) {
+      if (!editUnlocked) {
+        ev.target.value = '';
+        requireEditUnlock(() => document.getElementById('importFile').click());
+        return;
+      }
+      const file = ev.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const d = JSON.parse(e.target.result);
+          const arr = Array.isArray(d) ? d : d.features;
+          if (Array.isArray(arr)) {
+            features = arr;
+            selected = null;
+            selectedIds = [];
+            renderAll();
+            updateInspectorCard();
+            save();
+            setStatus('✅ تم استيراد الملف وحفظه بنجاح!');
+          }
+        } catch (err) {
+          alert('ملف غير صالح');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function setStatus(h) {
+      document.getElementById('status').innerHTML = h;
+    }
+
+    async function boot() {
+      updateLockUI();
+      updateMobileInspectorState();
+      // Ensure features has seeded data if empty
+      if (!features || !features.length) {
+        features = [...SEEDED_FEATURES];
+      }
+      // 1. Try local/Netlify server API first
+      try {
+        const rApi = await fetch('/api/teach?' + Date.now());
+        if (rApi.ok) {
+          const dApi = await rApi.json();
+          if (dApi.features && dApi.features.length) {
+            features = decryptFeatures(dApi.features);
+            localStorage.setItem('SURVEY_CAD_FEATURES_V1', JSON.stringify(features));
+          }
+        }
+      } catch (e) {}
+
+      // 2. Try live Cloud Sync Channel (for static cloud deployments across devices)
+      if (!features.length) {
+        try {
+          const rCloud = await fetch(`https://ntfy.sh/${CLOUD_SYNC_TOPIC}/json?poll=1&since=all`);
+          if (rCloud.ok) {
+            const text = await rCloud.text();
+            const lines = text.trim().split('\n').filter(Boolean);
+            for (let i = lines.length - 1; i >= 0; i--) {
+              const msg = JSON.parse(lines[i]);
+              if (msg.attachment && msg.attachment.url) {
+                const rAtt = await fetch(msg.attachment.url);
+                if (rAtt.ok) {
+                  const dAtt = await rAtt.json();
+                  if (dAtt.features && dAtt.features.length) {
+                    features = dAtt.features;
+                    localStorage.setItem('SURVEY_CAD_FEATURES_V1', JSON.stringify(features));
+                    break;
+                  }
+                }
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
+      // 3. Fallback to static user_teaching.json (initial seed on first deploy)
+      if (!features.length) {
+        try {
+          const r = await fetch('user_teaching.json?' + Date.now());
+          if (r.ok) {
+            const d = await r.json();
+            if (d.features && d.features.length) {
+              features = decryptFeatures(d.features);
+              localStorage.setItem('SURVEY_CAD_FEATURES_V1', JSON.stringify(features));
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (!features.length) {
+        try {
+          features = JSON.parse(localStorage.getItem('SURVEY_CAD_FEATURES_V1') || '[]');
+        } catch (e) {
+          features = [];
+        }
+      }
+
+      renderAll();
+      updateInspectorCard();
+    }
+
+    
+    function checkMobileMode() {
+      const isMobile = (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) || (window.innerWidth <= 1024);
+      if (isMobile) {
+        document.body.classList.add('mobile-layout');
+      } else {
+        document.body.classList.remove('mobile-layout');
+      }
+    }
+    checkMobileMode();
+    window.addEventListener('resize', checkMobileMode);
+
+    boot();
+  </script>
+</body>
+</html>

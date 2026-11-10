@@ -1104,10 +1104,119 @@
   
     
     
+    
+    /* Sleek Close Button Styling */
+    .mobile-panel-close {
+      background: rgba(255, 255, 255, 0.12) !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
+      color: #f1f5f9 !important;
+      width: 28px !important;
+      height: 28px !important;
+      border-radius: 8px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-size: 14px !important;
+      font-weight: 700 !important;
+      cursor: pointer !important;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      line-height: 1 !important;
+      padding: 0 !important;
+      user-select: none !important;
+    }
+    .mobile-panel-close:hover {
+      background: rgba(239, 68, 68, 0.9) !important;
+      border-color: #ef4444 !important;
+      color: #ffffff !important;
+      transform: scale(1.08) !important;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.5) !important;
+    }
+
+    /* Floating Docked Buttons for Minimized Panels */
+    .dock-container {
+      position: fixed;
+      pointer-events: none;
+      z-index: 1200;
+      inset: 0;
+    }
+    .floating-dock-btn {
+      position: absolute;
+      pointer-events: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(30, 41, 59, 0.96));
+      border: 1.5px solid rgba(16, 185, 129, 0.6);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 14px rgba(16, 185, 129, 0.3);
+      backdrop-filter: blur(14px);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 9px 16px;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+      animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.7); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .floating-dock-btn:hover {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.4), rgba(15, 23, 42, 0.98));
+      border-color: #34d399;
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(52, 211, 153, 0.5);
+    }
+    .floating-dock-btn.dock-right {
+      top: 14px;
+      right: 14px;
+    }
+    .floating-dock-btn.dock-left-top {
+      top: 14px;
+      left: 14px;
+    }
+    .floating-dock-btn.dock-left-bottom {
+      bottom: 24px;
+      left: 14px;
+    }
+    .floating-dock-btn.dock-survey-link {
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-color: rgba(56, 189, 248, 0.6);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 14px rgba(56, 189, 248, 0.3);
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(14, 116, 144, 0.9));
+    }
+    .floating-dock-btn.dock-survey-link:hover {
+      border-color: #38bdf8;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.4), rgba(15, 23, 42, 0.98));
+      transform: translateX(-50%) translateY(-2px) scale(1.04);
+    }
+
     </style>
 </head>
 <body>
   <div id="map"></div>
+
+  <!-- Floating Dock Buttons for Minimized Panels & Navigation -->
+  <div class="dock-container" id="dockContainer">
+    <button id="dockBtnRightPanel" class="floating-dock-btn dock-right" style="display:none" onclick="restorePanel('rightPanel')" title="استعادة نافذة أدوات الرسم">
+      <span>🛰️</span><span>أدوات الرسم والتحديد</span>
+    </button>
+    <button id="dockBtnShapeList" class="floating-dock-btn dock-left-top" style="display:none" onclick="restorePanel('shapeListBox')" title="استعادة قائمة الأشكال">
+      <span>📋</span><span>قائمة الأشكال</span>
+    </button>
+    <button id="dockBtnInspector" class="floating-dock-btn dock-left-bottom" style="display:none" onclick="restorePanel('inspectorBox')" title="استعادة بطاقة بيانات الأرض">
+      <span>🗂️</span><span>بطاقة بيانات الأرض</span>
+    </button>
+    <a href="survey.html" class="floating-dock-btn dock-survey-link" style="text-decoration:none" title="فتح صفحة الرفع المساحي والإحداثيات الجديدة">
+      <span>📍</span><span>لوحة الرفع المساحي الجديدة (بدون أراضي سابقة)</span>
+    </a>
+  </div>
+
 
   <!-- ================= MOBILE NAVIGATION & DRAWING CONTROLS ================= -->
     <!-- ================= MOBILE TOP BAR (Only visible on Mobile) ================= -->
@@ -1126,13 +1235,13 @@
 
 
   <!-- ================= RIGHT PANEL: MODE & DRAWING TOOLS ================= -->
-  <aside class="right-panel">
+  <aside class="right-panel" id="rightPanel">
     <div class="panel-header">
       <div style="display:flex;align-items:center;gap:6px">
         <span>🛰️ أدوات الرسم والتحديد</span>
         <span style="font-size:11px;color:#6ee7b7">الحفظ تلقائي ✔</span>
       </div>
-      <button type="button" class="mobile-panel-close" onclick="closeMobileList()" title="إغلاق القائمة">✖</button>
+      <button type="button" class="mobile-panel-close" onclick="minimizePanel('rightPanel')" title="تصغير النافذة إلى زر جانبي">✖</button>
     </div>
 
     <!-- 1. Mode Switch: Select vs Add -->
@@ -1216,13 +1325,13 @@
   <!-- ================= LEFT SIDEBAR: LIST (TOP) + INSPECTOR CARD (BOTTOM) ================= -->
   <aside class="left-sidebar">
     <!-- TOP LEFT: Drawn Shapes List -->
-    <div class="left-box list-box">
+    <div class="left-box list-box" id="shapeListBox">
       <div class="panel-header">
         <div style="display:flex;align-items:center;gap:6px">
           <span>📋 قائمة الأشكال (<span id="cnt">0</span>)</span>
           <span style="font-size:11px;color:#cbd5e1">اضغط للتحديد</span>
         </div>
-        <button type="button" class="mobile-panel-close" onclick="closeMobileList()" title="إغلاق القائمة">✖</button>
+        <button type="button" class="mobile-panel-close" onclick="minimizePanel('shapeListBox')" title="تصغير القائمة إلى زر جانبي">✖</button>
       </div>
       <div class="filter-bar">
         <input type="text" id="searchInput" placeholder="🔍 ابحث بالاسم أو المالك أو الملاحظة..." oninput="renderList()" />
@@ -1245,7 +1354,7 @@
           <span id="cardHeaderTitle" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🗂️ بطاقة قطعة الأرض</span>
           <span id="cardBadge" style="font-size:10.5px;background:rgba(250,204,21,0.2);color:#facc15;padding:2px 6px;border-radius:6px;white-space:nowrap">اختر قطعة</span>
         </div>
-        <button type="button" class="mobile-panel-close" onclick="deselect()" title="إغلاق البطاقة">✖</button>
+        <button type="button" class="mobile-panel-close" onclick="minimizePanel('inspectorBox')" title="تصغير البطاقة إلى زر جانبي">✖</button>
       </div>
 
       <!-- Empty State when nothing is selected or being drawn -->
@@ -1626,6 +1735,39 @@
       }
     }
 
+    
+    function minimizePanel(panelId) {
+      const el = document.getElementById(panelId);
+      if (!el) return;
+      el.style.display = 'none';
+      if (panelId === 'rightPanel') {
+        const btn = document.getElementById('dockBtnRightPanel');
+        if (btn) btn.style.display = 'inline-flex';
+      } else if (panelId === 'shapeListBox') {
+        const btn = document.getElementById('dockBtnShapeList');
+        if (btn) btn.style.display = 'inline-flex';
+      } else if (panelId === 'inspectorBox') {
+        const btn = document.getElementById('dockBtnInspector');
+        if (btn) btn.style.display = 'inline-flex';
+      }
+    }
+
+    function restorePanel(panelId) {
+      const el = document.getElementById(panelId);
+      if (!el) return;
+      el.style.display = 'flex';
+      if (panelId === 'rightPanel') {
+        const btn = document.getElementById('dockBtnRightPanel');
+        if (btn) btn.style.display = 'none';
+      } else if (panelId === 'shapeListBox') {
+        const btn = document.getElementById('dockBtnShapeList');
+        if (btn) btn.style.display = 'none';
+      } else if (panelId === 'inspectorBox') {
+        const btn = document.getElementById('dockBtnInspector');
+        if (btn) btn.style.display = 'none';
+      }
+    }
+
     function closeMobileList() {
       const listBox = document.querySelector('.left-box.list-box');
       const backdrop = document.getElementById('mobileDrawerBackdrop');
@@ -1781,6 +1923,7 @@
       }
       renderEditHandles();
       updateInspectorCard();
+      if (document.getElementById("inspectorBox") && document.getElementById("inspectorBox").style.display === "none") { restorePanel("inspectorBox"); }
     }
 
     function requireEditUnlock(callback) {
