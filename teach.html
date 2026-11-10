@@ -1196,6 +1196,94 @@
       transform: translateX(-50%) translateY(-2px) scale(1.04);
     }
 
+    
+    /* Sleek Vertex Handles & Floating Coordinate Tags */
+    .vtx-handle-badge {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      border: 2px solid #38bdf8;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+    .vtx-handle-badge:hover {
+      transform: scale(1.2);
+      border-color: #facc15;
+      background: #0284c7;
+    }
+    .vtx-handle-badge.multi-selected {
+      background: #ef4444;
+      border-color: #fecaca;
+      box-shadow: 0 0 12px #ef4444;
+    }
+    .lbl-anchor {
+      position: relative;
+    }
+    .vertex-coord-tag {
+      position: absolute;
+      transform: translate(-50%, -100%) translateY(-18px);
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.98));
+      border: 1.5px solid #38bdf8;
+      border-radius: 8px;
+      padding: 5px 9px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.7), 0 0 10px rgba(56, 189, 248, 0.4);
+      color: #f8fafc;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+      pointer-events: auto;
+      user-select: text;
+      z-index: 1050;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .vertex-coord-tag:hover {
+      transform: translate(-50%, -100%) translateY(-20px) scale(1.08);
+      border-color: #facc15;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), 0 0 14px rgba(250, 204, 21, 0.5);
+    }
+    .vertex-coord-tag::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 6px 6px 0;
+      border-style: solid;
+      border-color: #38bdf8 transparent transparent transparent;
+      display: block;
+      width: 0;
+    }
+    .vtx-tag-title {
+      font-size: 10.5px;
+      color: #38bdf8;
+      font-weight: 800;
+      border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+      padding-bottom: 2px;
+      margin-bottom: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .vtx-tag-val {
+      font-family: 'Consolas', monospace;
+      font-size: 10.5px;
+      color: #fde047;
+      line-height: 1.35;
+      direction: ltr;
+      text-align: left;
+    }
+
     </style>
 </head>
 <body>
@@ -1719,8 +1807,8 @@
     </div>
   </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
-    
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
     // ================= MOBILE NAVIGATION & TOP CARD LOGIC =================
     function toggleMobileList() {
       const listBox = document.querySelector('.left-box.list-box');
@@ -1736,37 +1824,58 @@
     }
 
     
-    function minimizePanel(panelId) {
-      const el = document.getElementById(panelId);
-      if (!el) return;
-      el.style.display = 'none';
-      if (panelId === 'rightPanel') {
-        const btn = document.getElementById('dockBtnRightPanel');
-        if (btn) btn.style.display = 'inline-flex';
-      } else if (panelId === 'shapeListBox') {
-        const btn = document.getElementById('dockBtnShapeList');
-        if (btn) btn.style.display = 'inline-flex';
-      } else if (panelId === 'inspectorBox') {
-        const btn = document.getElementById('dockBtnInspector');
-        if (btn) btn.style.display = 'inline-flex';
+    
+    window.minimizePanel = function(panelId) {
+      try {
+        const el = document.getElementById(panelId);
+        if (el) {
+          el.style.setProperty('display', 'none', 'important');
+        }
+        if (panelId === 'rightPanel') {
+          const btn = document.getElementById('dockBtnRightPanel');
+          if (btn) btn.style.setProperty('display', 'inline-flex', 'important');
+        } else if (panelId === 'shapeListBox') {
+          const btn = document.getElementById('dockBtnShapeList');
+          if (btn) btn.style.setProperty('display', 'inline-flex', 'important');
+        } else if (panelId === 'inspectorBox') {
+          const btn = document.getElementById('dockBtnInspector');
+          if (btn) btn.style.setProperty('display', 'inline-flex', 'important');
+        }
+      } catch (e) {
+        console.error('Error minimizing panel:', e);
       }
-    }
+    };
 
-    function restorePanel(panelId) {
-      const el = document.getElementById(panelId);
-      if (!el) return;
-      el.style.display = 'flex';
-      if (panelId === 'rightPanel') {
-        const btn = document.getElementById('dockBtnRightPanel');
-        if (btn) btn.style.display = 'none';
-      } else if (panelId === 'shapeListBox') {
-        const btn = document.getElementById('dockBtnShapeList');
-        if (btn) btn.style.display = 'none';
-      } else if (panelId === 'inspectorBox') {
-        const btn = document.getElementById('dockBtnInspector');
-        if (btn) btn.style.display = 'none';
+    window.restorePanel = function(panelId) {
+      try {
+        const el = document.getElementById(panelId);
+        if (el) {
+          el.style.setProperty('display', 'flex', 'important');
+        }
+        if (panelId === 'rightPanel') {
+          const btn = document.getElementById('dockBtnRightPanel');
+          if (btn) btn.style.setProperty('display', 'none', 'important');
+        } else if (panelId === 'shapeListBox') {
+          const btn = document.getElementById('dockBtnShapeList');
+          if (btn) btn.style.setProperty('display', 'none', 'important');
+        } else if (panelId === 'inspectorBox') {
+          const btn = document.getElementById('dockBtnInspector');
+          if (btn) btn.style.setProperty('display', 'none', 'important');
+        }
+      } catch (e) {
+        console.error('Error restoring panel:', e);
       }
-    }
+    };
+
+    window.copySinglePointCoord = function(lat, lng, pNum) {
+      const text = `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`;
+      navigator.clipboard.writeText(text).then(() => {
+        setStatus(`✔ تم نسخ إحداثيات النقطة P${pNum}: <b>${text}</b>`);
+      }).catch(() => {
+        prompt('انسخ الإحداثي:', text);
+      });
+    };
+
 
     function closeMobileList() {
       const listBox = document.querySelector('.left-box.list-box');
@@ -2682,13 +2791,39 @@
         });
       }
 
-      // 1. Vertex handles on selected shape (Click to select 1 or more points & press Backspace to delete!)
+      // 1. Vertex handles & Detailed Coordinates Callouts on selected shape
       f.coords.forEach((c, i) => {
         const isVtxSel = selectedVertexIndices.includes(i);
+        const latVal = Number(c[0]).toFixed(6);
+        const lngVal = Number(c[1]).toFixed(6);
+
+        // A. Floating Coordinate Tag above the point
+        L.marker(c, {
+          interactive: true,
+          icon: L.divIcon({
+            className: '',
+            iconSize: [0, 0],
+            iconAnchor: [0, 0],
+            html: `<div class="lbl-anchor">
+                    <div class="vertex-coord-tag" onclick="copySinglePointCoord(${latVal}, ${lngVal}, ${i + 1})" title="اضغط لنسخ إحداثيات النقطة P${i + 1}">
+                      <div class="vtx-tag-title"><span>📍 نقطة P${i + 1}</span><span style="font-size:9.5px;color:#94a3b8">📋 نسخ</span></div>
+                      <div class="vtx-tag-val">N: ${latVal}°</div>
+                      <div class="vtx-tag-val">E: ${lngVal}°</div>
+                    </div>
+                   </div>`
+          })
+        }).addTo(dimMapLayer);
+
+        // B. Vertex Point Marker with P1, P2...
         const m = L.marker(c, {
           draggable: editUnlocked,
-          title: 'اضغط لتحديد النقطة ثم Backspace لمسحها (أو اسحب لتحريكها)',
-          icon: L.divIcon({ className: 'vh' + (isVtxSel ? ' vh-selected' : '') })
+          title: `نقطة P${i + 1} (${latVal}, ${lngVal}) — اضغط لتحديدها وحذفها`,
+          icon: L.divIcon({
+            className: '',
+            iconSize: [22, 22],
+            iconAnchor: [11, 11],
+            html: `<div class="vtx-handle-badge ${isVtxSel ? 'multi-selected' : ''}">P${i + 1}</div>`
+          })
         }).addTo(editLayer);
 
         m.on('click', ev => {

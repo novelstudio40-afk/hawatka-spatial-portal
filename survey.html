@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>بوابة مكانية — الرفع المساحي ونقاط الإحداثيات (صفحة جديدة)</title>
+  <title>بوابة مكانية — الرفع المساحي ونقاط الإحداثيات</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     :root {
@@ -1197,31 +1197,59 @@
     }
 
     
-    /* Vertex Coordinates Callout Badges on the Map */
+    /* Sleek Vertex Handles & Floating Coordinate Tags */
+    .vtx-handle-badge {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      border: 2px solid #38bdf8;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+    .vtx-handle-badge:hover {
+      transform: scale(1.2);
+      border-color: #facc15;
+      background: #0284c7;
+    }
+    .vtx-handle-badge.multi-selected {
+      background: #ef4444;
+      border-color: #fecaca;
+      box-shadow: 0 0 12px #ef4444;
+    }
     .lbl-anchor {
       position: relative;
     }
     .vertex-coord-tag {
       position: absolute;
-      transform: translate(-50%, -100%) translateY(-14px);
-      background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.96));
+      transform: translate(-50%, -100%) translateY(-18px);
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.98));
       border: 1.5px solid #38bdf8;
       border-radius: 8px;
       padding: 5px 9px;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.65), 0 0 10px rgba(56, 189, 248, 0.35);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.7), 0 0 10px rgba(56, 189, 248, 0.4);
       color: #f8fafc;
-      font-size: 11.5px;
+      font-size: 11px;
       font-weight: 600;
       white-space: nowrap;
       pointer-events: auto;
       user-select: text;
       z-index: 1050;
+      cursor: pointer;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     .vertex-coord-tag:hover {
-      transform: translate(-50%, -100%) translateY(-16px) scale(1.06);
+      transform: translate(-50%, -100%) translateY(-20px) scale(1.08);
       border-color: #facc15;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75), 0 0 14px rgba(250, 204, 21, 0.5);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), 0 0 14px rgba(250, 204, 21, 0.5);
     }
     .vertex-coord-tag::after {
       content: '';
@@ -1236,7 +1264,7 @@
       width: 0;
     }
     .vtx-tag-title {
-      font-size: 11px;
+      font-size: 10.5px;
       color: #38bdf8;
       font-weight: 800;
       border-bottom: 1px solid rgba(56, 189, 248, 0.3);
@@ -1249,85 +1277,11 @@
     }
     .vtx-tag-val {
       font-family: 'Consolas', monospace;
-      font-size: 11px;
+      font-size: 10.5px;
       color: #fde047;
       line-height: 1.35;
       direction: ltr;
       text-align: left;
-    }
-
-    /* GPS Coordinates Table in Inspector Card */
-    .coords-table-box {
-      margin-top: 10px;
-      background: rgba(15, 23, 42, 0.75);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      border-radius: 10px;
-      padding: 10px;
-      box-shadow: inset 0 2px 6px rgba(0,0,0,0.3);
-    }
-    .coords-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 11.5px;
-      text-align: center;
-    }
-    .coords-table th {
-      background: rgba(56, 189, 248, 0.15);
-      color: #38bdf8;
-      padding: 6px 4px;
-      font-weight: 700;
-      border-bottom: 1px solid rgba(56, 189, 248, 0.3);
-    }
-    .coords-table td {
-      padding: 6px 4px;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.15);
-      color: #e2e8f0;
-      font-family: 'Consolas', monospace;
-      font-size: 11px;
-    }
-    .coords-table tr:hover td {
-      background: rgba(56, 189, 248, 0.08);
-      color: #facc15;
-    }
-    .coords-copy-btn {
-      background: rgba(56, 189, 248, 0.18);
-      border: 1px solid #38bdf8;
-      color: #38bdf8;
-      border-radius: 4px;
-      padding: 2px 6px;
-      cursor: pointer;
-      font-size: 11px;
-      transition: all 0.2s;
-    }
-    .coords-copy-btn:hover {
-      background: #38bdf8;
-      color: #0f172a;
-    }
-    .coords-actions-bar {
-      display: flex;
-      gap: 6px;
-      margin-top: 8px;
-    }
-    .btn-action-gps {
-      flex: 1;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      padding: 7px 10px;
-      font-size: 12px;
-      font-weight: 700;
-      border-radius: 6px;
-      cursor: pointer;
-      border: 1px solid rgba(56, 189, 248, 0.5);
-      background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(15, 23, 42, 0.8));
-      color: #38bdf8;
-      transition: all 0.2s;
-    }
-    .btn-action-gps:hover {
-      background: #38bdf8;
-      color: #0f172a;
-      box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
     }
 
     </style>
@@ -1346,9 +1300,7 @@
     <button id="dockBtnInspector" class="floating-dock-btn dock-left-bottom" style="display:none" onclick="restorePanel('inspectorBox')" title="استعادة بطاقة بيانات الأرض">
       <span>🗂️</span><span>بطاقة بيانات الأرض</span>
     </button>
-    <a href="teach.html" class="floating-dock-btn dock-survey-link" style="text-decoration:none;border-color:rgba(168,85,247,0.6);background:linear-gradient(135deg,rgba(15,23,42,0.94),rgba(126,34,206,0.9))" title="العودة إلى لوحة المخطط العام">
-      <span>🗺️</span><span>العودة إلى لوحة المخطط العام</span>
-    </a>
+
   </div>
 
 
@@ -1382,9 +1334,16 @@
     <div class="section">
       <!-- Edit Lock Status Banner -->
       <div class="lock-banner locked" id="lockBanner">
-        <span id="lockStatusText">✏️ وضع الرسم والتعديل المساحي مفتوح</span>
-        <button class="btn" id="btnToggleLock" style="padding:3px 8px;font-size:11px;border-color:#facc15;color:#facc15" onclick="toggleEditLock()">🔒 حماية</button>
-      </div>
+        <span id="lockStatusText">🔒 وضع التصفح فقط (التعديل محمي برقم سري)</span>
+        <button class="btn" id="btnToggleLock" style="padding:3px 8px;font-size:11px;border-color:#facc15;color:#facc15" onclick="toggleEditLock()">🔑 فتح التعديل</button>
+      
+        <!-- Secret Return Link to General Plan (ONLY visible when unlocked with PIN) -->
+        <div id="secretPlanLinkBox" style="display:none;margin-top:10px;padding-top:8px;border-top:1px dashed rgba(255,255,255,0.25);">
+          <a href="teach.html" class="btn" style="width:100%;justify-content:center;background:linear-gradient(135deg,#7e22ce,#4c1d95);border-color:#a855f7;color:#f3e8ff;text-decoration:none;font-weight:700;font-size:12px;padding:7px 10px;">
+            🗺️ الانتقال إلى لوحة المخطط العام الرئيسي
+          </a>
+        </div>
+</div>
 
       <div class="section-title">١) اختر وضع العمل (تحديد قطعة أو إضافة جديد)</div>
       <div class="mode-switch">
@@ -1853,8 +1812,8 @@
     </div>
   </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
-    
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
     // ================= MOBILE NAVIGATION & TOP CARD LOGIC =================
     function toggleMobileList() {
       const listBox = document.querySelector('.left-box.list-box');
@@ -1870,37 +1829,58 @@
     }
 
     
-    function minimizePanel(panelId) {
-      const el = document.getElementById(panelId);
-      if (!el) return;
-      el.style.display = 'none';
-      if (panelId === 'rightPanel') {
-        const btn = document.getElementById('dockBtnRightPanel');
-        if (btn) btn.style.display = 'inline-flex';
-      } else if (panelId === 'shapeListBox') {
-        const btn = document.getElementById('dockBtnShapeList');
-        if (btn) btn.style.display = 'inline-flex';
-      } else if (panelId === 'inspectorBox') {
-        const btn = document.getElementById('dockBtnInspector');
-        if (btn) btn.style.display = 'inline-flex';
+    
+    window.minimizePanel = function(panelId) {
+      try {
+        const el = document.getElementById(panelId);
+        if (el) {
+          el.style.setProperty('display', 'none', 'important');
+        }
+        if (panelId === 'rightPanel') {
+          const btn = document.getElementById('dockBtnRightPanel');
+          if (btn) btn.style.setProperty('display', 'inline-flex', 'important');
+        } else if (panelId === 'shapeListBox') {
+          const btn = document.getElementById('dockBtnShapeList');
+          if (btn) btn.style.setProperty('display', 'inline-flex', 'important');
+        } else if (panelId === 'inspectorBox') {
+          const btn = document.getElementById('dockBtnInspector');
+          if (btn) btn.style.setProperty('display', 'inline-flex', 'important');
+        }
+      } catch (e) {
+        console.error('Error minimizing panel:', e);
       }
-    }
+    };
 
-    function restorePanel(panelId) {
-      const el = document.getElementById(panelId);
-      if (!el) return;
-      el.style.display = 'flex';
-      if (panelId === 'rightPanel') {
-        const btn = document.getElementById('dockBtnRightPanel');
-        if (btn) btn.style.display = 'none';
-      } else if (panelId === 'shapeListBox') {
-        const btn = document.getElementById('dockBtnShapeList');
-        if (btn) btn.style.display = 'none';
-      } else if (panelId === 'inspectorBox') {
-        const btn = document.getElementById('dockBtnInspector');
-        if (btn) btn.style.display = 'none';
+    window.restorePanel = function(panelId) {
+      try {
+        const el = document.getElementById(panelId);
+        if (el) {
+          el.style.setProperty('display', 'flex', 'important');
+        }
+        if (panelId === 'rightPanel') {
+          const btn = document.getElementById('dockBtnRightPanel');
+          if (btn) btn.style.setProperty('display', 'none', 'important');
+        } else if (panelId === 'shapeListBox') {
+          const btn = document.getElementById('dockBtnShapeList');
+          if (btn) btn.style.setProperty('display', 'none', 'important');
+        } else if (panelId === 'inspectorBox') {
+          const btn = document.getElementById('dockBtnInspector');
+          if (btn) btn.style.setProperty('display', 'none', 'important');
+        }
+      } catch (e) {
+        console.error('Error restoring panel:', e);
       }
-    }
+    };
+
+    window.copySinglePointCoord = function(lat, lng, pNum) {
+      const text = `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`;
+      navigator.clipboard.writeText(text).then(() => {
+        setStatus(`✔ تم نسخ إحداثيات النقطة P${pNum}: <b>${text}</b>`);
+      }).catch(() => {
+        prompt('انسخ الإحداثي:', text);
+      });
+    };
+
 
     function closeMobileList() {
       const listBox = document.querySelector('.left-box.list-box');
@@ -1991,7 +1971,7 @@
 
     // State
     const EDIT_PIN = 'MS@96'; // Secret password for editing
-    let editUnlocked = true;
+    let editUnlocked = (sessionStorage.getItem('HAWATKA_EDIT_PIN') === EDIT_PIN);
     let pendingPinCallback = null;
 
     const SEEDED_FEATURES = [];
@@ -2039,6 +2019,10 @@
     // ---------- Password / Edit Lock Management ----------
     function updateLockUI() {
       const banner = document.getElementById('lockBanner');
+      const secretBox = document.getElementById('secretPlanLinkBox');
+      if (secretBox) {
+        secretBox.style.display = editUnlocked ? 'block' : 'none';
+      }
       const txt = document.getElementById('lockStatusText');
       const btn = document.getElementById('btnToggleLock');
       if (!banner) return;
@@ -2050,8 +2034,8 @@
         btn.style.color = '#34d399';
       } else {
         banner.className = 'lock-banner locked';
-        txt.innerHTML = '✏️ وضع الرسم والتعديل المساحي مفتوح';
-        btn.innerHTML = '🔒 حماية';
+        txt.innerHTML = '🔒 وضع التصفح فقط (التعديل محمي برقم سري)';
+        btn.innerHTML = '🔑 فتح التعديل';
         btn.style.borderColor = '#facc15';
         btn.style.color = '#facc15';
       }
@@ -2790,109 +2774,6 @@
       setStatus(`✋ محدد حالياً: <b>${f.owner || f.name}</b> (${f.coords.length} نقطة) — اضغط على أي نقطة برتقالية على الضلع لتحديدها ثم <kbd>Backspace</kbd> لمسحها.`);
     }
 
-    
-    // ================= GPS COORDINATES INSPECTOR & EXPORT =================
-    function copySinglePointCoord(lat, lng, pNum) {
-      const text = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-      navigator.clipboard.writeText(text).then(() => {
-        setStatus(`✔ تم نسخ إحداثيات النقطة P${pNum} إلى الحافظة: <b>${text}</b>`);
-      }).catch(() => {
-        prompt('انسخ الإحداثي:', text);
-      });
-    }
-
-    function renderGpsCoordsTable(coords) {
-      if (!coords || coords.length === 0) return '';
-      let rowsHtml = '';
-      coords.forEach((c, idx) => {
-        const pNum = idx + 1;
-        const lat = Number(c[0]).toFixed(6);
-        const lng = Number(c[1]).toFixed(6);
-        rowsHtml += `
-          <tr>
-            <td><b style="color:#38bdf8">P${pNum}</b></td>
-            <td>${lat}°</td>
-            <td>${lng}°</td>
-            <td>
-              <button type="button" class="coords-copy-btn" onclick="copySinglePointCoord(${lat}, ${lng}, ${pNum})" title="نسخ">📋</button>
-              <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" class="coords-copy-btn" style="text-decoration:none;display:inline-block" title="فتح في Google Maps">🗺️</a>
-            </td>
-          </tr>
-        `;
-      });
-
-      return `
-        <div class="coords-table-box">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-            <span style="font-size:12px;font-weight:700;color:#38bdf8">📍 إحداثيات أركان القطعة (GPS ${coords.length} نقاط):</span>
-            <span style="font-size:10.5px;color:#94a3b8">WGS84</span>
-          </div>
-          <div style="max-height:160px;overflow-y:auto">
-            <table class="coords-table">
-              <thead>
-                <tr>
-                  <th>نقطة</th>
-                  <th>خط العرض (N)</th>
-                  <th>خط الطول (E)</th>
-                  <th>إجراء</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${rowsHtml}
-              </tbody>
-            </table>
-          </div>
-          <div class="coords-actions-bar">
-            <button type="button" class="btn-action-gps" onclick="copyAllParcelCoords()">
-              <span>📋</span><span>نسخ كل الإحداثيات</span>
-            </button>
-            <button type="button" class="btn-action-gps" onclick="exportCoordsCsv()">
-              <span>📥</span><span>تصدير CSV / TXT</span>
-            </button>
-          </div>
-        </div>
-      `;
-    }
-
-    function copyAllParcelCoords() {
-      const f = features.find(x => x.id === selected);
-      if (!f || !f.coords || f.coords.length === 0) {
-        setStatus('⚠️ لا توجد قطعة محددة لنسخ إحداثياتها');
-        return;
-      }
-      let report = `إحداثيات قطعة الأرض: ${f.name || 'بدون اسم'}\n`;
-      if (f.owner) report += `المالك: ${f.owner}\n`;
-      if (f.basin) report += `الحوض: ${f.basin}\n`;
-      report += `عدد النقاط: ${f.coords.length}\n`;
-      report += `----------------------------------------\n`;
-      report += `النقطة\tخط العرض (Lat N)\tخط الطول (Lng E)\n`;
-      f.coords.forEach((c, i) => {
-        report += `P${i + 1}\t${Number(c[0]).toFixed(6)}\t${Number(c[1]).toFixed(6)}\n`;
-      });
-      navigator.clipboard.writeText(report).then(() => {
-        setStatus(`✔ تم نسخ جميع إحداثيات القطعة (${f.coords.length} نقاط) بتنسيق جدول جاهز للطباعة أو الإكسيل!`);
-      }).catch(() => {
-        prompt('انسخ الإحداثيات:', report);
-      });
-    }
-
-    function exportCoordsCsv() {
-      const f = features.find(x => x.id === selected);
-      if (!f || !f.coords || f.coords.length === 0) return;
-      let csv = `Point,Latitude,Longitude\n`;
-      f.coords.forEach((c, i) => {
-        csv += `P${i + 1},${Number(c[0]).toFixed(6)},${Number(c[1]).toFixed(6)}\n`;
-      });
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `coordinates_parcel_${f.id}_${(f.name || 'land').replace(/\s+/g, '_')}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-      setStatus('✔ تم تنزيل ملف الإحداثيات بصيغة CSV بنجاح.');
-    }
-
     function renderEditHandles() {
       editLayer.clearLayers();
       dimMapLayer.clearLayers();
@@ -2919,13 +2800,39 @@
         });
       }
 
-      // 1. Vertex handles on selected shape (Click to select 1 or more points & press Backspace to delete!)
+      // 1. Vertex handles & Detailed Coordinates Callouts on selected shape
       f.coords.forEach((c, i) => {
         const isVtxSel = selectedVertexIndices.includes(i);
+        const latVal = Number(c[0]).toFixed(6);
+        const lngVal = Number(c[1]).toFixed(6);
+
+        // A. Floating Coordinate Tag above the point
+        L.marker(c, {
+          interactive: true,
+          icon: L.divIcon({
+            className: '',
+            iconSize: [0, 0],
+            iconAnchor: [0, 0],
+            html: `<div class="lbl-anchor">
+                    <div class="vertex-coord-tag" onclick="copySinglePointCoord(${latVal}, ${lngVal}, ${i + 1})" title="اضغط لنسخ إحداثيات النقطة P${i + 1}">
+                      <div class="vtx-tag-title"><span>📍 نقطة P${i + 1}</span><span style="font-size:9.5px;color:#94a3b8">📋 نسخ</span></div>
+                      <div class="vtx-tag-val">N: ${latVal}°</div>
+                      <div class="vtx-tag-val">E: ${lngVal}°</div>
+                    </div>
+                   </div>`
+          })
+        }).addTo(dimMapLayer);
+
+        // B. Vertex Point Marker with P1, P2...
         const m = L.marker(c, {
           draggable: editUnlocked,
-          title: 'اضغط لتحديد النقطة ثم Backspace لمسحها (أو اسحب لتحريكها)',
-          icon: L.divIcon({ className: 'vh' + (isVtxSel ? ' vh-selected' : '') })
+          title: `نقطة P${i + 1} (${latVal}, ${lngVal}) — اضغط لتحديدها وحذفها`,
+          icon: L.divIcon({
+            className: '',
+            iconSize: [22, 22],
+            iconAnchor: [11, 11],
+            html: `<div class="vtx-handle-badge ${isVtxSel ? 'multi-selected' : ''}">P${i + 1}</div>`
+          })
         }).addTo(editLayer);
 
         m.on('click', ev => {
@@ -3717,11 +3624,11 @@
     }
 
     // ---------- Save / Load / Export / Import (Local + Live Cloud Sync) ----------
-    const CLOUD_SYNC_TOPIC = 'survey_spatial_2026_new_v1';
+    const CLOUD_SYNC_TOPIC = 'survey_spatial_2026_data_v1';
 
     function save() {
       if (!editUnlocked) return;
-      localStorage.setItem('SURVEY_CAD_FEATURES_V1', JSON.stringify(features));
+      localStorage.setItem('SURVEY_PARCELS_DATA_V1', JSON.stringify(features));
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => {
         const payloadStr = JSON.stringify({ pin: EDIT_PIN, pins: PINS, savedAt: new Date().toISOString(), features });
@@ -3759,7 +3666,7 @@
     function exportJSON() {
       const a = document.createElement('a');
       a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify({ pins: PINS, features }, null, 2));
-      a.download = 'survey_parcels_data.json';
+      a.download = 'survey_parcels.json';
       a.click();
     }
 
@@ -3810,7 +3717,7 @@
           const dApi = await rApi.json();
           if (dApi.features && dApi.features.length) {
             features = decryptFeatures(dApi.features);
-            localStorage.setItem('SURVEY_CAD_FEATURES_V1', JSON.stringify(features));
+            localStorage.setItem('SURVEY_PARCELS_DATA_V1', JSON.stringify(features));
           }
         }
       } catch (e) {}
@@ -3830,7 +3737,7 @@
                   const dAtt = await rAtt.json();
                   if (dAtt.features && dAtt.features.length) {
                     features = dAtt.features;
-                    localStorage.setItem('SURVEY_CAD_FEATURES_V1', JSON.stringify(features));
+                    localStorage.setItem('SURVEY_PARCELS_DATA_V1', JSON.stringify(features));
                     break;
                   }
                 }
@@ -3848,7 +3755,7 @@
             const d = await r.json();
             if (d.features && d.features.length) {
               features = decryptFeatures(d.features);
-              localStorage.setItem('SURVEY_CAD_FEATURES_V1', JSON.stringify(features));
+              localStorage.setItem('SURVEY_PARCELS_DATA_V1', JSON.stringify(features));
             }
           }
         } catch (e) {}
@@ -3856,7 +3763,7 @@
 
       if (!features.length) {
         try {
-          features = JSON.parse(localStorage.getItem('SURVEY_CAD_FEATURES_V1') || '[]');
+          features = JSON.parse(localStorage.getItem('SURVEY_PARCELS_DATA_V1') || '[]');
         } catch (e) {
           features = [];
         }
