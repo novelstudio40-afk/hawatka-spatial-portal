@@ -1319,6 +1319,48 @@
       letter-spacing: 0.2px;
     }
 
+    
+    /* Draggable Window Headers & Grip Styling */
+    .panel-header {
+      user-select: none !important;
+      cursor: grab !important;
+      touch-action: none !important;
+    }
+    .panel-header:active {
+      cursor: grabbing !important;
+    }
+    .drag-grip-icon {
+      font-size: 15px;
+      color: rgba(255, 255, 255, 0.45);
+      margin-left: 6px;
+      display: inline-flex;
+      align-items: center;
+      cursor: grab;
+      user-select: none;
+    }
+    .drag-grip-icon:hover {
+      color: #38bdf8;
+    }
+
+    /* Mobile Responsive Panel Constraints to prevent squishing & collision */
+    @media (max-width: 850px) {
+      .right-panel {
+        width: min(330px, calc(100vw - 20px)) !important;
+        max-height: 72vh !important;
+      }
+      .left-sidebar {
+        width: min(330px, calc(100vw - 20px)) !important;
+        max-height: 82vh !important;
+      }
+      .left-box {
+        width: 100% !important;
+        max-height: 50vh !important;
+      }
+      .card-box {
+        max-height: 65vh !important;
+      }
+    }
+
     </style>
 </head>
 <body>
@@ -1361,7 +1403,7 @@
   <aside class="right-panel" id="rightPanel">
     <div class="panel-header">
       <div style="display:flex;align-items:center;gap:6px">
-        <span>🛰️ أدوات الرسم والتحديد</span>
+        <span class="drag-grip-icon" title="اسحب من هنا لتحريك النافذة">⠿</span><span>🛰️ أدوات الرسم والتحديد</span>
         <span style="font-size:11px;color:#6ee7b7">الحفظ تلقائي ✔</span>
       </div>
       <button type="button" class="mobile-panel-close" onclick="minimizePanel('rightPanel')" title="تصغير النافذة إلى زر جانبي">✖</button>
@@ -1455,7 +1497,7 @@
     <div class="left-box list-box" id="shapeListBox">
       <div class="panel-header">
         <div style="display:flex;align-items:center;gap:6px">
-          <span>📋 قائمة الأشكال (<span id="cnt">0</span>)</span>
+          <span class="drag-grip-icon" title="اسحب من هنا لتحريك النافذة">⠿</span><span>📋 قائمة الأشكال (<span id="cnt">0</span>)</span>
           <span style="font-size:11px;color:#cbd5e1">اضغط للتحديد</span>
         </div>
         <button type="button" class="mobile-panel-close" onclick="minimizePanel('shapeListBox')" title="تصغير القائمة إلى زر جانبي">✖</button>
@@ -1478,7 +1520,7 @@
     <div class="left-box card-box" id="inspectorBox">
       <div class="panel-header" style="background:linear-gradient(135deg, #1e3a8a, #0f172a);display:flex;align-items:center;justify-content:space-between">
         <div style="display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden">
-          <span id="cardHeaderTitle" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🗂️ بطاقة قطعة الأرض</span>
+          <span class="drag-grip-icon" title="اسحب من هنا لتحريك النافذة">⠿</span><span id="cardHeaderTitle" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🗂️ بطاقة قطعة الأرض</span>
           <span id="cardBadge" style="font-size:10.5px;background:rgba(250,204,21,0.2);color:#facc15;padding:2px 6px;border-radius:6px;white-space:nowrap">اختر قطعة</span>
         </div>
         <button type="button" class="mobile-panel-close" onclick="minimizePanel('inspectorBox')" title="تصغير البطاقة إلى زر جانبي">✖</button>
@@ -2261,6 +2303,7 @@
       }
       renderAll();
       updateInspectorCard();
+      initDraggableWindows();
     }
 
     // ---------- Geodesic Geometry Math ----------
@@ -3833,6 +3876,117 @@
 
     function setStatus(h) {
       document.getElementById('status').innerHTML = h;
+    }
+
+    
+    // ================= TOUCH & MOUSE DRAGGABLE WINDOWS =================
+    let highestZIndex = 2500;
+
+    function makeWindowDraggable(panelEl, headerEl) {
+      if (!panelEl || !headerEl) return;
+
+      headerEl.style.cursor = 'grab';
+      headerEl.style.touchAction = 'none';
+
+      let isDragging = false;
+      let startX = 0, startY = 0;
+      let initialLeft = 0, initialTop = 0;
+
+      function startDrag(e) {
+        if (e.target.closest('button, input, select, a, .mobile-panel-close, .vtx-copy-btn')) return;
+
+        isDragging = true;
+        highestZIndex += 10;
+        
+        const rect = panelEl.getBoundingClientRect();
+        panelEl.style.position = 'fixed';
+        panelEl.style.zIndex = highestZIndex;
+        panelEl.style.right = 'auto';
+        panelEl.style.bottom = 'auto';
+        panelEl.style.left = rect.left + 'px';
+        panelEl.style.top = rect.top + 'px';
+        panelEl.style.margin = '0';
+
+        initialLeft = rect.left;
+        initialTop = rect.top;
+
+        const pt = e.touches ? e.touches[0] : e;
+        startX = pt.clientX;
+        startY = pt.clientY;
+
+        headerEl.style.cursor = 'grabbing';
+        if (e.cancelable) e.preventDefault();
+      }
+
+      function moveDrag(e) {
+        if (!isDragging) return;
+        const pt = e.touches ? e.touches[0] : e;
+        const dx = pt.clientX - startX;
+        const dy = pt.clientY - startY;
+
+        let newLeft = initialLeft + dx;
+        let newTop = initialTop + dy;
+
+        const maxLeft = window.innerWidth - 60;
+        const maxTop = window.innerHeight - 50;
+        newLeft = Math.max(-panelEl.offsetWidth + 80, Math.min(newLeft, maxLeft));
+        newTop = Math.max(5, Math.min(newTop, maxTop));
+
+        panelEl.style.left = newLeft + 'px';
+        panelEl.style.top = newTop + 'px';
+
+        if (e.cancelable) e.preventDefault();
+      }
+
+      function endDrag() {
+        if (isDragging) {
+          isDragging = false;
+          headerEl.style.cursor = 'grab';
+        }
+      }
+
+      headerEl.addEventListener('mousedown', startDrag);
+      window.addEventListener('mousemove', moveDrag);
+      window.addEventListener('mouseup', endDrag);
+
+      headerEl.addEventListener('touchstart', startDrag, { passive: false });
+      window.addEventListener('touchmove', moveDrag, { passive: false });
+      window.addEventListener('touchend', endDrag);
+      window.addEventListener('touchcancel', endDrag);
+    }
+
+    
+    // Initialize dragging immediately upon DOM load
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initDraggableWindows);
+    } else {
+      initDraggableWindows();
+    }
+
+    function initDraggableWindows() {
+      const rp = document.getElementById('rightPanel');
+      if (rp) {
+        const rpHdr = rp.querySelector('.panel-header');
+        if (rpHdr) makeWindowDraggable(rp, rpHdr);
+      }
+
+      const listB = document.getElementById('shapeListBox');
+      if (listB) {
+        const listHdr = listB.querySelector('.panel-header');
+        if (listHdr) makeWindowDraggable(listB, listHdr);
+      }
+
+      const inspB = document.getElementById('inspectorBox');
+      if (inspB) {
+        const inspHdr = inspB.querySelector('.panel-header');
+        if (inspHdr) makeWindowDraggable(inspB, inspHdr);
+      }
+
+      // If mobile on initial load, auto-minimize shapeListBox so it doesn't cover rightPanel
+      if (window.innerWidth <= 850) {
+        const listB = document.getElementById('shapeListBox');
+        if (listB) minimizePanel('shapeListBox');
+      }
     }
 
     async function boot() {
