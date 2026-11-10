@@ -1906,14 +1906,64 @@
       }
     };
 
-    window.copySinglePointCoord = function(lat, lng, pNum) {
-      const text = `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`;
-      navigator.clipboard.writeText(text).then(() => {
-        setStatus(`✔ تم نسخ إحداثيات النقطة P${pNum}: <b>${text}</b>`);
-      }).catch(() => {
-        prompt('انسخ الإحداثي:', text);
+    
+    // Foolproof clipboard copy supporting modern navigator.clipboard + execCommand fallback
+    window.copyToClipboardSafe = function(text) {
+      return new Promise((resolve, reject) => {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(resolve).catch(() => {
+            fallbackCopy(text) ? resolve() : reject();
+          });
+        } else {
+          fallbackCopy(text) ? resolve() : reject();
+        }
+
+        function fallbackCopy(str) {
+          try {
+            const ta = document.createElement('textarea');
+            ta.value = str;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            ta.style.top = '-9999px';
+            ta.setAttribute('readonly', '');
+            document.body.appendChild(ta);
+            ta.select();
+            ta.setSelectionRange(0, 99999);
+            const ok = document.execCommand('copy');
+            document.body.removeChild(ta);
+            return ok;
+          } catch (e) {
+            return false;
+          }
+        }
       });
     };
+
+    window.copySinglePointCoord = function(btnEl, lat, lng, pNum) {
+      // Format exactly as required for Google Maps and Google Earth search bar: 27.262119, 30.976066
+      const formatted = `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`;
+      
+      copyToClipboardSafe(formatted).then(() => {
+        if (btnEl && btnEl.innerText !== undefined) {
+          const oldText = btnEl.innerText;
+          const oldBg = btnEl.style.background;
+          btnEl.innerText = '✔ تم!';
+          btnEl.style.background = '#22c55e';
+          btnEl.style.color = '#ffffff';
+          btnEl.style.borderColor = '#4ade80';
+          setTimeout(() => {
+            btnEl.innerText = oldText;
+            btnEl.style.background = oldBg;
+            btnEl.style.color = '';
+            btnEl.style.borderColor = '';
+          }, 2500);
+        }
+        setStatus(`✔ تم نسخ إحداثيات النقطة P${pNum} بنجاح: <b style="color:#fde047;direction:ltr;display:inline-block">${formatted}</b> (جاهزة للصق في Google Maps أو Google Earth)`);
+      }).catch(() => {
+        prompt('انسخ الإحداثيات للصق في Google Maps / Google Earth:', formatted);
+      });
+    };
+
 
 
     function closeMobileList() {
@@ -2880,7 +2930,10 @@
                       <div class="vertex-coord-tag draggable-tag" title="🖐️ اسحب لتحريك الكارت إلى أي مكان">
                         <div class="vtx-tag-title">
                           <span>📍 نقطة P${i + 1}</span>
-                          <button type="button" class="vtx-copy-btn" onclick="copySinglePointCoord(${latVal}, ${lngVal}, ${i + 1})" title="نسخ الإحداثي">📋 نسخ</button>
+                          <div style="display:flex;gap:4px;align-items:center">
+                            <button type="button" class="vtx-copy-btn" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation(); copySinglePointCoord(this, ${latVal}, ${lngVal}, ${i + 1})" title="نسخ الإحداثي للصق في Google Maps و Google Earth">📋 نسخ</button>
+                            <a href="https://www.google.com/maps?q=${latVal},${lngVal}" target="_blank" class="vtx-copy-btn" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()" style="text-decoration:none;display:inline-flex;align-items:center;" title="فتح النقطة في Google Maps">🗺️</a>
+                          </div>
                         </div>
                         <div class="vtx-tag-val">N: ${latVal}°</div>
                         <div class="vtx-tag-val">E: ${lngVal}°</div>
